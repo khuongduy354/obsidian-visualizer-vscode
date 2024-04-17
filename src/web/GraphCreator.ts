@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 export class GraphCreator {
   localGraph: Map<vscode.Uri, Array<vscode.Uri>>;
+  d3Format: any = null;
 
   constructor() {
     this.localGraph = new Map();
@@ -25,8 +26,6 @@ export class GraphCreator {
       const currentFile = queue.pop();
       if (!currentFile) break;
 
-      console.log("currentFile", currentFile);
-
       if (!this.localGraph.has(currentFile)) {
         // get all links of current file
         const content = (
@@ -43,6 +42,91 @@ export class GraphCreator {
         this.localGraph.set(currentFile, filePaths);
       }
     }
+  }
+
+  parseD3Format() {
+    let result: any = {
+      nodes: [],
+      relationships: [],
+    };
+
+    for (const [key, value] of this.localGraph.entries()) {
+      const currNode = key.fsPath;
+      result.nodes.push({
+        id: currNode,
+        labels: ["File"],
+        properties: {
+          fileUri: key,
+        },
+      });
+
+      for (let relUri of value) {
+        const relNode = relUri.fsPath;
+        result.relationships.push({
+          id: currNode + relNode,
+          type: "LINKS_TO",
+          startNode: currNode,
+          endNode: relNode,
+          properties: {},
+        });
+      }
+    }
+
+    this.d3Format = {
+      results: [
+        {
+          columns: ["File"],
+          data: [
+            {
+              graph: {
+                ...result,
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    // let sample = {
+    //   nodes: [
+    //     {
+    //       id: "1",
+    //       labels: ["User"],
+    //       properties: {
+    //         userId: "eisman",
+    //       },
+    //     },
+    //     {
+    //       id: "8",
+    //       labels: ["Project"],
+    //       properties: {
+    //         name: "neo4jd3",
+    //         title: "neo4jd3.js",
+    //         description: "Neo4j graph visualization using D3.js.",
+    //         url: "https://eisman.github.io/neo4jd3",
+    //       },
+    //     },
+    //   ],
+    //   relationships: [
+    //     {
+    //       id: "7",
+    //       type: "DEVELOPES",
+    //       startNode: "1",
+    //       endNode: "8",
+    //       properties: {
+    //         from: 1470002400000,
+    //       },
+    //       source: "1",
+    //       target: "8",
+    //       linknum: 1,
+    //     },
+    //   ],
+    // };
+  }
+  getD3Format() {
+    if (!this.d3Format) this.parseD3Format();
+
+    return this.d3Format;
   }
 
   getLocalGraphMap() {
@@ -99,10 +183,6 @@ export class GraphCreator {
   // }
 
   //   getLocalGraph(filePath: string) {}
-}
-
-class D3Graph {
-  addNode() {}
 }
 
 // D3.js data format
