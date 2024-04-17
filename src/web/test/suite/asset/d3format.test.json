@@ -1,0 +1,44 @@
+{
+    "nodes": [
+        {
+            "id": "/markdowns/test copy 2.md",
+            "labels": [
+                "File"
+            ],
+            "properties": {
+                "fileUri": {
+                    "$mid": 1,
+                    "fsPath": "/markdowns/test copy 2.md",
+                    "external": "vscode-test-web://mount/markdowns/test%20copy%202.md",
+                    "path": "/markdowns/test copy 2.md",
+                    "scheme": "vscode-test-web",
+                    "authority": "mount"
+                }
+            }
+        },
+        {
+            "id": "/markdowns/test copy 3.md",
+            "labels": [
+                "File"
+            ],
+            "properties": {
+                "fileUri": {
+                    "$mid": 1,
+                    "fsPath": "/markdowns/test copy 3.md",
+                    "external": "vscode-test-web:/markdowns/test%20copy%203.md",
+                    "path": "/markdowns/test copy 3.md",
+                    "scheme": "vscode-test-web"
+                }
+            }
+        }
+    ],
+    "relationships": [
+        {
+            "id": "/markdowns/test copy 2.md/markdowns/test copy 3.md",
+            "type": "LINKS_TO",
+            "startNode": "/markdowns/test copy 2.md",
+            "endNode": "/markdowns/test copy 3.md",
+            "properties": {}
+        }
+    ]
+}

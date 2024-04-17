@@ -1,0 +1,93 @@
+<html lang="en">
+  <head>
+    <title>Obsidian Visualizer</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
+  <body>
+    <div class="graph"></div>
+    <script src="./neo4jd3.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script>
+      const data = {
+        results: [
+          {
+            columns: ["File"],
+            data: [
+              {
+                graph: {
+                  nodes: [
+                    {
+                      id: "/markdowns/test copy 2.md",
+                      labels: ["File"],
+                      properties: {
+                        fileUri: {
+                          $mid: 1,
+                          fsPath: "/markdowns/test copy 2.md",
+                          external:
+                            "vscode-test-web://mount/markdowns/test%20copy%202.md",
+                          path: "/markdowns/test copy 2.md",
+                          scheme: "vscode-test-web",
+                          authority: "mount",
+                        },
+                      },
+                    },
+                    {
+                      id: "/markdowns/test copy 3.md",
+                      labels: ["File"],
+                      properties: {
+                        fileUri: {
+                          $mid: 1,
+                          fsPath: "/markdowns/test copy 3.md",
+                          external:
+                            "vscode-test-web:/markdowns/test%20copy%203.md",
+                          path: "/markdowns/test copy 3.md",
+                          scheme: "vscode-test-web",
+                        },
+                      },
+                    },
+                  ],
+                  relationships: [
+                    {
+                      id: "/markdowns/test copy 2.md/markdowns/test copy 3.md",
+                      type: "LINKS_TO",
+                      startNode: "/markdowns/test copy 2.md",
+                      endNode: "/markdowns/test copy 3.md",
+                      properties: {},
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      };
+      var neo4jd3 = new Neo4jd3(".graph", {
+        highlight: [
+          {
+            class: "File",
+          },
+        ],
+        minCollision: 60,
+        neo4jData: data,
+        nodeRadius: 25,
+        // onNodeDoubleClick: function (node) {
+        //   switch (node.id) {
+        //     case "25":
+        //       // Google
+        //       window.open(node.properties.url, "_blank");
+        //       break;
+        //     default:
+        //       var maxNodes = 5,
+        //         data = neo4jd3.randomD3Data(node, maxNodes);
+        //       neo4jd3.updateWithD3Data(data);
+        //       break;
+        //   }
+        // },
+        zoomFit: true,
+      });
+
+      neo4jd3.updateWithD3Data(data);
+    </script>
+  </body>
+</html>
