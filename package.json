@@ -16,6 +16,18 @@
       {
         "command": "obsidian-visualizer.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "obsidian-visualizer.showLocalGraph",
+        "title": "Show Local Graph"
+      },
+      {
+        "command": "obsidian-visualizer.showGlobalGraph",
+        "title": "Show Global Graph"
+      },
+      {
+        "command": "obsidian-visualizer.detectBacklinks",
+        "title": "Detect Back Links"
       }
     ]
   },

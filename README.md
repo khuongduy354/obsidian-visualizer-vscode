@@ -63,3 +63,15 @@ You can author your README using Visual Studio Code.  Here are some useful edito
 * [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
 
 **Enjoy!**
+
+
+# dev 
+## graph: local and global 
+- use neo4j graphdb, when activate, format first
+- global scan every markdown names, add to nodes, for every connection add to relationships
+<!-- - local first: for each markdown, find all connections and add to data chart  --> 
+- local: scan in relationships only 
+## backlinks  
+- for every link, lookup that in map, 
+
+
