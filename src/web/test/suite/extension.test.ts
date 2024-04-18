@@ -16,31 +16,30 @@ suite("Web Extension Test Suite", () => {
 });
 
 suite("Graph Creator test", () => {
-  const gCreator = new GraphCreator();
-  const fsPath =
-    "/static/devextensions/src/web/test/suite/asset/sample-notes/test copy 2.md";
-  const startUri = vscode.Uri.from({
+  const uri = vscode.Uri.from({
     scheme: "http",
-    path: fsPath,
     authority: "localhost:3000",
+    path: "/static/devextensions",
   });
+  const gCreator = new GraphCreator(uri);
+  const startFsPath = "/src/web/test/suite/asset/sample-notes/test copy 2.md";
 
   test("Parse js Map correctly", async () => {
-    await gCreator.parseLocalGraph(startUri);
+    await gCreator.parseLocalGraph(startFsPath);
     const graphMap = gCreator.getLocalGraphMap();
 
-    // 2 nodes in total
+    // 2 nodes
     assert.strictEqual(graphMap.size, 2);
 
-    // map must include starting file
-    assert.strictEqual(graphMap.has(startUri), true);
+    // node 1 is in the map
+    assert.strictEqual(graphMap.has(startFsPath), true);
 
-    // starting file (test copy 2.md) has 1 link
-    assert.strictEqual(graphMap.get(startUri)?.length, 1);
+    // node 1 has 1 link
+    assert.strictEqual(graphMap.get(startFsPath)?.length, 1);
   });
 
   test("Parse to neo format correctly", async () => {
-    await gCreator.parseLocalGraph(startUri);
+    await gCreator.parseLocalGraph(startFsPath);
     let neoFormat = gCreator.getNeoFormat();
 
     // const sample = {
@@ -85,7 +84,7 @@ suite("Graph Creator test", () => {
     assert.strictEqual(neoFormat.nodes[0].hasOwnProperty("id"), true);
     assert.strictEqual(neoFormat.nodes[0].hasOwnProperty("properties"), true);
     assert.strictEqual(
-      neoFormat.nodes[0].properties.hasOwnProperty("fileUri"),
+      neoFormat.nodes[0].properties.hasOwnProperty("fileFs"),
       true
     );
 
