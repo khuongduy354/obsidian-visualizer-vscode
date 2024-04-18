@@ -10,18 +10,17 @@ export function activate(context: vscode.ExtensionContext) {
       // textEditor.document.uri;
 
       // parse local graph
-      const gCreator = new GraphCreator();
-      gCreator.parseLocalGraph(textEditor.document.uri).then(() => {
+      const gCreator = new GraphCreator(context.extensionUri);
+      gCreator.parseLocalGraph(textEditor.document.uri.fsPath).then(() => {
         // render to webview
         const webview = new GraphWebView(context);
         webview
           .initializeWebView(gCreator.getNeoFormat())
           .setNodeListener(function (message: any) {
-            const uri = message.node.properties.fileUri;
-            console.log("uri: ", uri);
+            const fs = message.node.properties.fileFs;
 
-            let reparsed = vscode.Uri.parse(uri.scheme + "://" + uri.fsPath);
-            vscode.commands.executeCommand("vscode.open", reparsed);
+            let uri = vscode.Uri.from({ scheme: "vscode-test-web", path: fs });
+            vscode.commands.executeCommand("vscode.open", uri);
           });
       });
     }

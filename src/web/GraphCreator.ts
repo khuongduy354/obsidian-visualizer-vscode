@@ -1,21 +1,18 @@
 import * as vscode from "vscode";
 export class GraphCreator {
-  localGraph: Map<vscode.Uri, Array<vscode.Uri>>;
+  localGraph: Map<string, Array<string>>;
   neoFormat: any = null;
+  baseUri: vscode.Uri;
 
-  constructor() {
+  constructor(baseUri: vscode.Uri) {
+    this.baseUri = baseUri;
     this.localGraph = new Map();
   }
 
-  getScheme(): string {
-    // Check if the runtime environment is VS Code on the web
-    if (vscode.env.appHost === "web") {
-      return "vscode-web";
-    } else {
-      return "file"; // On desktop, use the 'file' scheme
-    }
+  getFullUri(fsPath: string) {
+    return vscode.Uri.joinPath(this.baseUri, fsPath);
   }
-  async parseLocalGraph(start: vscode.Uri) {
+  async parseLocalGraph(start: string) {
     // for each file, insert into map in file_path-links_to_file_path format
 
     this.localGraph = new Map();
@@ -29,15 +26,11 @@ export class GraphCreator {
       if (!this.localGraph.has(currentFile)) {
         // get all links of current file
         const content = (
-          await vscode.workspace.openTextDocument(currentFile)
+          await vscode.workspace.openTextDocument(this.getFullUri(currentFile))
         ).getText();
         const backLinks = [...content.toString().matchAll(linkRegex)];
         const filePaths = backLinks.map((backLink) => {
-          return vscode.Uri.from({
-            scheme: "http",
-            path: backLink[1],
-            authority: "localhost:3000",
-          });
+          return backLink[1];
         });
 
         // add to queue
@@ -55,17 +48,17 @@ export class GraphCreator {
     };
 
     for (const [key, value] of this.localGraph.entries()) {
-      const currNode = key.fsPath;
+      const currNode = key;
       result.nodes.push({
         id: currNode,
         labels: ["File"],
         properties: {
-          fileUri: key,
+          fileFs: currNode,
         },
       });
 
       for (let relUri of value) {
-        const relNode = relUri.fsPath;
+        const relNode = relUri;
         result.relationships.push({
           id: currNode + relNode,
           type: "LINKS_TO",
