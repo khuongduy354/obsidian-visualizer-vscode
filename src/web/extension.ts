@@ -2,50 +2,8 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
 import { GraphCreator } from "./GraphCreator";
+import { GraphWebView } from "./webview/GraphWebView";
 
-const getGraphWebViewHtml = (neoLib: vscode.Uri, data: string) => {
-  return `
-<html lang="en">
-  <head>
-    <title>Obsidian Visualizer</title>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  </head>
-  <body>
-    <div class="graph"></div>
-    <script src="${neoLib}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
-    <script>
-      var neo4jd3 = new Neo4jd3(".graph", {
-        highlight: [
-          {
-            class: "File",
-          },
-        ],
-        minCollision: 60,
-        neo4jDataUrl: "json/neo4jData.json",
-        neo4jData: ${data},
-        nodeRadius: 25,
-        // onNodeDoubleClick: function (node) {
-        //   switch (node.id) {
-        //     case "25":
-        //       // Google
-        //       window.open(node.properties.url, "_blank");
-        //       break;
-        //     default:
-        //       var maxNodes = 5,
-        //         data = neo4jd3.randomD3Data(node, maxNodes);
-        //       neo4jd3.updateWithD3Data(data);
-        //       break;
-        //   }
-        // },
-        zoomFit: true,
-      });
-    </script>
-  </body>
-</html>
-  `;
-};
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -77,26 +35,17 @@ export function activate(context: vscode.ExtensionContext) {
       console.log(context.extensionUri);
       // console.log(textEditor.document.uri);
       gCreator.parseLocalGraph(textEditor.document.uri).then(() => {
-        console.log(gCreator.getD3Format());
-        // webview
-        const panel = vscode.window.createWebviewPanel(
-          "graphView",
-          "Local Graph View",
-          vscode.ViewColumn.One,
-          { enableScripts: true }
-        );
-        const onDiskPath = vscode.Uri.joinPath(
-          context.extensionUri,
-          "src",
-          "web",
-          "webview",
-          "neo4jd3.min.js"
-        );
-        const neo4djlib = panel.webview.asWebviewUri(onDiskPath);
-        panel.webview.html = getGraphWebViewHtml(
-          neo4djlib,
-          JSON.stringify(gCreator.getD3Format())
-        );
+        const webview = new GraphWebView(context);
+        webview
+          .initializeWebView(gCreator.getD3Format())
+          .setNodeListener(function (message: any) {
+            const uri = message.node.properties.fileUri;
+            console.log("uri: ", uri);
+
+            let reparsed = vscode.Uri.parse(uri.scheme + "://" + uri.fsPath);
+
+            // vscode.commands.executeCommand("vscode.open", reparsed);
+          });
       });
     }
   );

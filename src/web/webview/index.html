@@ -5,10 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   </head>
   <body>
-    <div class="graph"></div>
-    <script src="./neo4jd3.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <div id="graph"></div>
+    <script src="./neo4jd3.min.js"></script>
+    <script src="./d3.min.js"></script>
     <script>
+      if (acquireVsCodeApi === undefined) {
+        var acquireVsCodeApi = () => {
+          return {
+            postMessage: (message) => {
+              console.log(message);
+            },
+          };
+        };
+      }
+      const vscode = acquireVsCodeApi();
       const data = {
         results: [
           {
@@ -62,32 +72,30 @@
           },
         ],
       };
-      var neo4jd3 = new Neo4jd3(".graph", {
+      var neo4jd3 = new Neo4jd3("#graph", {
         highlight: [
           {
             class: "File",
           },
         ],
-        minCollision: 60,
+        minCollision: 100,
         neo4jData: data,
         nodeRadius: 25,
-        // onNodeDoubleClick: function (node) {
-        //   switch (node.id) {
-        //     case "25":
-        //       // Google
-        //       window.open(node.properties.url, "_blank");
-        //       break;
-        //     default:
-        //       var maxNodes = 5,
-        //         data = neo4jd3.randomD3Data(node, maxNodes);
-        //       neo4jd3.updateWithD3Data(data);
-        //       break;
-        //   }
+        onNodeDoubleClick: function (node) {
+          console.log(node);
+          vscode.postMessage({
+            command: "onNodeDoubleClick",
+            node,
+          });
+        },
+        // onNodeMouseEnter: function (node) {
+        //   console.log("Mouse Enter: ", node);
         // },
-        zoomFit: true,
+        infoPanel: false,
+        // zoomFit: true,
       });
 
-      neo4jd3.updateWithD3Data(data);
+      // neo4jd3.updateWithD3Data(data);
     </script>
   </body>
 </html>
