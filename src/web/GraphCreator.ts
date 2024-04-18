@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 export class GraphCreator {
   localGraph: Map<vscode.Uri, Array<vscode.Uri>>;
-  d3Format: any = null;
+  neoFormat: any = null;
 
   constructor() {
     this.localGraph = new Map();
@@ -33,7 +33,11 @@ export class GraphCreator {
         ).getText();
         const backLinks = [...content.toString().matchAll(linkRegex)];
         const filePaths = backLinks.map((backLink) => {
-          return vscode.Uri.parse("vscode-test-web://" + backLink[1]);
+          return vscode.Uri.from({
+            scheme: "http",
+            path: backLink[1],
+            authority: "localhost:3000",
+          });
         });
 
         // add to queue
@@ -44,7 +48,7 @@ export class GraphCreator {
     }
   }
 
-  parseD3Format() {
+  parseNeoFormat() {
     let result: any = {
       nodes: [],
       relationships: [],
@@ -72,7 +76,7 @@ export class GraphCreator {
       }
     }
 
-    this.d3Format = {
+    this.neoFormat = {
       results: [
         {
           columns: ["File"],
@@ -123,10 +127,10 @@ export class GraphCreator {
     //   ],
     // };
   }
-  getD3Format() {
-    if (!this.d3Format) this.parseD3Format();
+  getNeoFormat() {
+    if (!this.neoFormat) this.parseNeoFormat();
 
-    return this.d3Format;
+    return this.neoFormat;
   }
 
   getLocalGraphMap() {
