@@ -66,11 +66,24 @@ export class GraphWebView {
   <head>
     <title>Obsidian Visualizer</title>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /> 
+    <style> 
+    .graph{
+      height: 100vh; 
+      background-color: #f5f5f5; 
+      zIndex: 1;
+    }   
+
+    html, body {
+      height: 100%; 
+      width: 100%;
+    }
+
+    </style>
   </head>
   <body>
-    <div class="graph"></div>
-    <script src="${libs.neo4jlib}"></script>
+    <div class="graph"></div> 
+    <script src="${libs.neo4jlib}"></div>
     <script src="${libs.d3lib}"></script>
     <script>
       const vscode = acquireVsCodeApi();
@@ -89,7 +102,8 @@ export class GraphWebView {
                 node: node,
             });
         },
-        infoPanel: false
+        infoPanel: false,
+        zoomFit: true
       });
     </script>
   </body>
