@@ -78,6 +78,11 @@ export class GraphWebView {
     html, body {
       height: 100%; 
       width: 100%;
+    } 
+    .text{ 
+      margin-top: 10px; 
+      background-color: #000000;  
+      fill:#808080
     }
 
     </style>
@@ -101,7 +106,7 @@ export class GraphWebView {
         neo4jData: ${data},
         nodeRadius: 25, 
         icons:{
-          "File":"asasd"
+          "File":""
         },
         onNodeDoubleClick: function (node) {
             vscode.postMessage({
@@ -110,7 +115,7 @@ export class GraphWebView {
             });
         },
         infoPanel: false,
-        zoomFit: true, 
+        zoomFit: false, 
       });
     </script>
   </body>
