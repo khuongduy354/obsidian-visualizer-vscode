@@ -65,7 +65,21 @@ You can author your README using Visual Studio Code.  Here are some useful edito
 **Enjoy!**
 
 
-# dev 
+# dev   
+
+## todo 
+1. check link obsidian  
+-> obsidian do another file scan for backlink, it only stores file name, not path
+2. check scheme 
+3. show file name below  
+-> code into lib
+
+# done 
+6. make it sticky 
+-> enough
+4. notification when parsing graph   
+5. webview title  
+
 ## graph: local and global 
 - use neo4j graphdb, when activate, format first
 - global scan every markdown names, add to nodes, for every connection add to relationships

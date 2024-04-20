@@ -7,10 +7,10 @@ export class GraphWebView {
     this.context = context;
   }
 
-  initializeWebView(_graphData: any) {
+  initializeWebView(_graphData: any, panelName: string) {
     const panel = vscode.window.createWebviewPanel(
       "graphView",
-      "Local Graph View",
+      panelName,
       vscode.ViewColumn.One,
       { enableScripts: true }
     );
@@ -68,11 +68,12 @@ export class GraphWebView {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /> 
     <style> 
-    .graph{
+   .container{
       height: 100vh; 
-      background-color: #f5f5f5; 
-      zIndex: 1;
-    }   
+    }     
+    .neo4jd3 {
+      height: 100%;
+    }
 
     html, body {
       height: 100%; 
@@ -82,20 +83,26 @@ export class GraphWebView {
     </style>
   </head>
   <body>
+  <div class="container">
     <div class="graph"></div> 
-    <script src="${libs.neo4jlib}"></div>
+  </div>
+
+    <script src="${libs.neo4jlib}"></script>
     <script src="${libs.d3lib}"></script>
     <script>
       const vscode = acquireVsCodeApi();
       var neo4jd3 = new Neo4jd3(".graph", {
         highlight: [
           {
-            class: "File",
+            class: "File", 
           },
         ],
         minCollision: 60,
         neo4jData: ${data},
-        nodeRadius: 25,
+        nodeRadius: 25, 
+        icons:{
+          "File":"asasd"
+        },
         onNodeDoubleClick: function (node) {
             vscode.postMessage({
                 command: "onNodeDoubleClick",
@@ -103,7 +110,7 @@ export class GraphWebView {
             });
         },
         infoPanel: false,
-        zoomFit: true
+        zoomFit: true, 
       });
     </script>
   </body>

@@ -150,12 +150,9 @@ export class GraphCreator {
         ],
       };
 
-      console.log(final);
-
       if (isLocal) {
         this.localNeoFormat = final;
       } else {
-        console.log("setting global");
         this.globalNeoFormat = final;
       }
 
