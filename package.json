@@ -1,10 +1,14 @@
 {
   "name": "obsidian-visualizer",
-  "displayName": "obsidian-visualizer",
-  "description": "Provide basic Obsidian features like graphs, backlinks,... for workspace with markdowns",
-  "version": "0.0.1",
+  "displayName": "Obsidian Visualizer",
+  "description": "Obsidian graphs, backlinks,... visualization in VSCode",
+  "version": "0.0.2",
+  "publisher": "khuongduy354",
+  "repository": {
+    "url": "https://github.com/khuongduy354/obsidian-visualizer-vscode"
+  },
   "engines": {
-    "vscode": "^1.88.0"
+    "vscode": "^1.0.0"
   },
   "categories": [
     "Other"
@@ -21,15 +25,15 @@
       },
       {
         "command": "obsidian-visualizer.showLocalGraph",
-        "title": "Show Local Graph"
+        "title": "Obsidian Visualizer: Local Graph"
       },
       {
         "command": "obsidian-visualizer.showGlobalGraph",
-        "title": "Show Global Graph"
+        "title": "Obsidian Visualizer: Global Graph"
       },
       {
         "command": "obsidian-visualizer.detectBacklinks",
-        "title": "Detect Back Links"
+        "title": "Obsidian Visualizer: Backlinks"
       }
     ]
   },
@@ -44,7 +48,7 @@
     "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. ."
   },
   "devDependencies": {
-    "@types/vscode": "^1.88.0",
+    "@types/vscode": "^1.0.0",
     "@types/mocha": "^10.0.6",
     "@types/assert": "^1.5.10",
     "eslint": "^8.57.0",

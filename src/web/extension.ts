@@ -12,7 +12,7 @@ export function activate(context: vscode.ExtensionContext) {
 
       // parse local graph
       const gCreator = new GraphCreator(context.extensionUri);
-      vscode.window.showInformationMessage("Parsing local graph...");
+      vscode.window.showInformationMessage(textEditor.document.uri.scheme);
       gCreator.parseLocalGraph(textEditor.document.uri.fsPath).then(() => {
         // render to webview
         const webview = new GraphWebView(context);
