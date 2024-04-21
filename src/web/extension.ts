@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { GraphCreator } from "./GraphCreator";
 import { GraphWebView } from "./webview/GraphWebView";
 
-const getScheme = () => {
+export const getScheme = () => {
   const workspace = vscode.workspace.workspaceFolders;
   if (workspace === undefined || workspace.length === 0) return null;
 

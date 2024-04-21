@@ -4,8 +4,7 @@
 1. check link obsidian  
 -> obsidian do another file scan for backlink, it only stores file name, not path 
 -> consider adding this feature
-2. check scheme 
--> export vsix, install on web and install on desktop
+2. configurations: same as obsidian 
 
 # done 
 6. make it sticky 
@@ -13,6 +12,8 @@
 4. notification when parsing graph   
 5. webview title  
 3. show file name below  
+2. check scheme 
+-> export vsix, install on web and install on desktop
 
 ## graph: local and global 
 - use neo4j graphdb, when activate, format first

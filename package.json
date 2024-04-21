@@ -1,7 +1,7 @@
 {
   "name": "obsidian-visualizer",
   "displayName": "Obsidian Visualizer",
-  "description": "Obsidian graphs, backlinks,... visualization in VSCode",
+  "description": "Obsidian graphs, backlinks,... visualization by opening vault in VSCode",
   "icon": "images/demo_dark.png",
   "version": "0.0.2",
   "publisher": "khuongduy354",
