@@ -1,17 +1,18 @@
 import * as vscode from "vscode";
+import { URIHandler } from "./URIHandler";
 
 export class GraphCreator {
   localGraph: Map<string, Array<string>>;
   globalNeoFormat: any = null;
   localNeoFormat: any = null;
-  scheme: string;
   globalGraph: Map<string, Array<string>>;
   mdList: string[] = [];
+  uriHandler: URIHandler;
 
-  constructor(scheme: string) {
+  constructor(uriHandler: URIHandler = new URIHandler()) {
     this.localGraph = new Map();
     this.globalGraph = new Map();
-    this.scheme = scheme;
+    this.uriHandler = uriHandler;
   }
   joinPath(...args: string[]) {
     let res = "";
@@ -30,10 +31,7 @@ export class GraphCreator {
     let filePath = this.joinPath(currentParent, start);
 
     let entries = await vscode.workspace.fs.readDirectory(
-      vscode.Uri.from({
-        scheme: this.scheme,
-        path: filePath,
-      })
+      this.uriHandler.getFullURI(filePath)
     );
 
     for (let entry of entries) {
@@ -47,8 +45,8 @@ export class GraphCreator {
     }
   }
 
-  getFullUri(fsPath: string) {
-    return vscode.Uri.from({ scheme: this.scheme, path: fsPath });
+  getFullUri(path: string, isRel = true) {
+    return this.uriHandler.getFullURI(path, isRel);
   }
 
   async parseGlobalGraph() {
@@ -89,7 +87,9 @@ export class GraphCreator {
       if (!this.localGraph.has(currentFile)) {
         // get all links of current file
         const content = (
-          await vscode.workspace.openTextDocument(this.getFullUri(currentFile))
+          await vscode.workspace.openTextDocument(
+            this.getFullUri(currentFile, false)
+          )
         ).getText();
         const backLinks = [...content.toString().matchAll(linkRegex)];
         const filePaths = backLinks.map((backLink) => {
