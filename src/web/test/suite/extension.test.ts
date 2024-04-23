@@ -4,7 +4,7 @@ import * as assert from "assert";
 // as well as import your extension to test it
 import * as vscode from "vscode";
 import { GraphCreator } from "../../GraphCreator";
-import { getScheme } from "../../extension";
+import { URIHandler } from "../../URIHandler";
 // import * as myExtension from '../../extension';
 
 suite("Web Extension Test Suite", () => {
@@ -22,9 +22,9 @@ suite("Graph Creator test", () => {
     authority: "localhost:3000",
     path: "/static/devextensions",
   });
-  const gCreator = new GraphCreator("http");
-  const startFsPath =
-    "/static/devextensions/src/web/test/suite/asset/sample-notes/test copy 2.md";
+  const uriHandler = new URIHandler(uri);
+  const gCreator = new GraphCreator(uriHandler);
+  const startFsPath = "/src/web/test/suite/asset/sample-notes/test copy 2.md";
 
   test("Parse js Map correctly", async () => {
     await gCreator.parseLocalGraph(startFsPath);
