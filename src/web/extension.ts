@@ -14,6 +14,8 @@ export function activate(context: vscode.ExtensionContext) {
         const isMd = textEditor.document.fileName.split(".").pop() === "md";
         if (!isMd) return;
 
+        console.log("URI: ", textEditor.document.uri);
+
         // parse local graph
         const gCreator = new GraphCreator();
         vscode.window.showInformationMessage("Parsing local graph...");

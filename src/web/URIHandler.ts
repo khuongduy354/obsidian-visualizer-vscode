@@ -17,22 +17,22 @@ export class URIHandler {
 
   // get full uri from a relative path of current workspace
   getFullURI(path: string, isRelative = true) {
-    //if on desktop
+    let uri = vscode.Uri.from({
+      path: path,
+      scheme: "file",
+    });
+    if (isRelative) {
+      uri = vscode.Uri.joinPath(this.baseWorkspaceURI, path);
+    }
     const baseScheme = this.baseWorkspaceURI.scheme;
+
+    //if on desktop
     if (baseScheme === "file") {
-      let uri = vscode.Uri.from({
-        path: path,
-        scheme: "file",
-      });
-      if (isRelative) {
-        uri = vscode.Uri.joinPath(this.baseWorkspaceURI, path);
-      }
       return uri;
     }
 
     // if online
-    if (baseScheme === "vscode-vfs")
-      return vscode.Uri.joinPath(this.baseWorkspaceURI, path);
+    if (baseScheme === "vscode-vfs") return uri;
 
     // if testing
     if (baseScheme === "vscode-test-web")
@@ -42,5 +42,18 @@ export class URIHandler {
       return vscode.Uri.joinPath(this.baseWorkspaceURI, path);
 
     throw new Error("Unsupported scheme");
+  }
+
+  static joinPath(...args: string[]) {
+    let res = "";
+    for (let i = 0; i < args.length; i++) {
+      if (args[i] === "") continue;
+      if (!args[i].startsWith("/") && !res.endsWith("/")) {
+        args[i] = "/" + args[i];
+      }
+      res += args[i];
+    }
+
+    return res;
   }
 }
