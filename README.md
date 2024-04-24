@@ -10,7 +10,7 @@ Providing core obsidian features in VSCode: graphs, backlinks,...
 **Note**: it will included all markdown files recursively starting from the root directory of current workspace
 
 
-\!\[global graph demo\]\(images/demo_dark.png)
+![global graph demo](images/demo_dark.png)
 
 
 
