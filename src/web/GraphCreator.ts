@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { URIHandler } from "./URIHandler";
+import { ObsiFilesTracker } from "./ObsiFilesTracker";
 
 export class GraphCreator {
   localGraph: Map<string, Array<string>>;
@@ -8,27 +9,18 @@ export class GraphCreator {
   globalGraph: Map<string, Array<string>>;
   mdList: string[] = [];
   uriHandler: URIHandler;
+  obsiFilesTracker: ObsiFilesTracker;
 
   constructor(uriHandler: URIHandler = new URIHandler()) {
     this.localGraph = new Map();
     this.globalGraph = new Map();
     this.uriHandler = uriHandler;
+    this.obsiFilesTracker = new ObsiFilesTracker(uriHandler);
   }
-  joinPath(...args: string[]) {
-    let res = "";
-    for (let i = 0; i < args.length; i++) {
-      if (args[i] === "") continue;
-      if (!args[i].startsWith("/") && !res.endsWith("/")) {
-        args[i] = "/" + args[i];
-      }
-      res += args[i];
-    }
 
-    return res;
-  }
   async readDirRecursively(start: string, currentParent: string) {
     // let path = currentParent + start + "/";
-    let filePath = this.joinPath(currentParent, start);
+    let filePath = URIHandler.joinPath(currentParent, start);
 
     let entries = await vscode.workspace.fs.readDirectory(
       this.uriHandler.getFullURI(filePath)
@@ -37,7 +29,7 @@ export class GraphCreator {
     for (let entry of entries) {
       if (entry[1] === 1) {
         const isMd = entry[0].split(".").pop() === "md";
-        if (isMd) this.mdList.push(this.joinPath(filePath, entry[0]));
+        if (isMd) this.mdList.push(URIHandler.joinPath(filePath, entry[0]));
       }
       if (entry[1] === 2) {
         await this.readDirRecursively(entry[0], filePath);
@@ -69,6 +61,7 @@ export class GraphCreator {
           return backLink[1];
         });
 
+        // directory scan
         this.globalGraph.set(currentFile, filePaths);
       }
     }
@@ -92,9 +85,35 @@ export class GraphCreator {
           )
         ).getText();
         const backLinks = [...content.toString().matchAll(linkRegex)];
-        const filePaths = backLinks.map((backLink) => {
+        let filePaths = backLinks.map((backLink) => {
           return backLink[1];
         });
+
+        // attempt resolving full path
+        const filePathsProm = filePaths.map(async (filePath) => {
+          // if path is absolute, no resolve
+          if (filePath.startsWith("/")) return filePath;
+
+          // if available
+          let fullPath = this.obsiFilesTracker.getFullPath(filePath);
+          if (fullPath !== undefined) return fullPath;
+
+          // if this path previously failed, skip
+          if (this.obsiFilesTracker.failedScans.has(filePath)) return undefined;
+
+          // scan more if not
+          await this.obsiFilesTracker.scanFullPath();
+          fullPath = this.obsiFilesTracker.getFullPath(filePath);
+          if (fullPath !== undefined) return fullPath;
+
+          // scan everything but not found, add to failed scans
+          this.obsiFilesTracker.failedScans.add(filePath);
+          return undefined;
+        });
+
+        filePaths = (await Promise.all(filePathsProm)).filter(
+          (fp) => fp !== undefined
+        ) as string[];
 
         // add to queue
         queue = queue.concat(filePaths);

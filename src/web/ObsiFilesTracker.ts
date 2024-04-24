@@ -28,6 +28,7 @@ export class ObsiFilesTracker {
   async readDirRecursively(start: string, currentParent: string) {
     // let path = currentParent + start + "/";
     let filePath = URIHandler.joinPath(currentParent, start);
+    console.log("file path: ", this.uriHandler.getFullURI(filePath).path);
 
     let entries = await vscode.workspace.fs.readDirectory(
       this.uriHandler.getFullURI(filePath)
