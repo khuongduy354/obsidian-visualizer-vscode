@@ -14,6 +14,16 @@ export class ObsiFilesTracker {
     this.uriHandler = uriHandler;
   }
 
+  isAbs(path: string) {
+    if (path.includes("/")) {
+      // 1/2 vs folder/note
+
+      //TODO: try attach to root & open  => failed ? absolute (true) : relative (false)
+
+      return true;
+    }
+    return false;
+  }
   getFullPath(fileName: string) {
     return this.fileNameFullPathMap.get(fileName);
   }

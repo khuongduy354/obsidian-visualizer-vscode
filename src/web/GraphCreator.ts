@@ -3,17 +3,16 @@ import { URIHandler } from "./URIHandler";
 import { ObsiFilesTracker } from "./ObsiFilesTracker";
 
 export class GraphCreator {
-  localGraph: Map<string, Array<string>>;
+  localGraph: Map<string, Array<string>> = new Map();
+  localBacklinks: Map<string, Array<string>> = new Map();
   globalNeoFormat: any = null;
   localNeoFormat: any = null;
-  globalGraph: Map<string, Array<string>>;
+  globalGraph: Map<string, Array<string>> = new Map();
   mdList: string[] = [];
   uriHandler: URIHandler;
   obsiFilesTracker: ObsiFilesTracker;
 
   constructor(uriHandler: URIHandler = new URIHandler()) {
-    this.localGraph = new Map();
-    this.globalGraph = new Map();
     this.uriHandler = uriHandler;
     this.obsiFilesTracker = new ObsiFilesTracker(uriHandler);
   }
@@ -91,22 +90,21 @@ export class GraphCreator {
 
         // attempt resolving full path
         const filePathsProm = filePaths.map(async (filePath) => {
-          // if path is absolute, no resolve
-          if (filePath.startsWith("/")) return filePath;
+          // path is absolute, no resolve
+          if (this.obsiFilesTracker.isAbs(filePath)) return filePath;
 
-          // if available
+          // already available
           let fullPath = this.obsiFilesTracker.getFullPath(filePath);
           if (fullPath !== undefined) return fullPath;
 
-          // if this path previously failed, skip
+          // previously scan all but failed, skip
           if (this.obsiFilesTracker.failedScans.has(filePath)) return undefined;
 
-          // scan more if not
           await this.obsiFilesTracker.scanFullPath();
           fullPath = this.obsiFilesTracker.getFullPath(filePath);
           if (fullPath !== undefined) return fullPath;
 
-          // scan everything but not found, add to failed scans
+          // scan all but failed
           this.obsiFilesTracker.failedScans.add(filePath);
           return undefined;
         });
@@ -115,9 +113,19 @@ export class GraphCreator {
           (fp) => fp !== undefined
         ) as string[];
 
-        // add to queue
         queue = queue.concat(filePaths);
 
+        // set backlinks
+        // TODO: bug when filename overlap, but since i skip absolute path above, it should be fine
+        filePaths.forEach((filePath) => {
+          if (!this.localBacklinks.has(filePath)) {
+            this.localBacklinks.set(filePath, [currentFile]);
+          } else {
+            this.localBacklinks.get(filePath)?.push(currentFile);
+          }
+        });
+
+        // set this file forward link
         this.localGraph.set(currentFile, filePaths);
       }
     }

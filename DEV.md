@@ -1,13 +1,17 @@
 # dev   
 
-## todo   
-0. decide whether resolving at neo or obsi ? 
--> obsi
+## todo    
+0. doc current full logic of obsi, neo parsing
 1. fix datastrucutre 
 - add backlinks   
 - use filename as idx for both Obsi & Neo 
 - add as below
-
+2. better gui  
+- clearer color, bigger text 
+- only show filename not fullpath 
+3. if forward links has same (relative) name to itself 
+-> ignore forward link
+4. redesign path resolving logics
 
 
 
