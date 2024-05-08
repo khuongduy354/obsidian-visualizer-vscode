@@ -17,14 +17,13 @@ export class URIHandler {
 
   // get full uri from a relative path of current workspace
   getFullURI(path: string, isRelative = true) {
-    let uri = vscode.Uri.from({
-      path: path,
-      scheme: "file",
-    });
+    const baseScheme = this.baseWorkspaceURI.scheme;
+
+    let uri = this.baseWorkspaceURI.with({ path: path });
+
     if (isRelative) {
       uri = vscode.Uri.joinPath(this.baseWorkspaceURI, path);
     }
-    const baseScheme = this.baseWorkspaceURI.scheme;
 
     //if on desktop
     if (baseScheme === "file") {

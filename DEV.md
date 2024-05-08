@@ -3,7 +3,6 @@
 ## todo    
 0. doc current full logic of obsi, neo parsing
 1. fix datastrucutre 
-- add backlinks   
 - use filename as idx for both Obsi & Neo 
 - add as below
 2. better gui  
@@ -59,7 +58,6 @@ Files -> Obsi -> Neo (graph json)
 
 
 + links and graphs 
-- links can be either absolute or relative, link resolving happens at graph creating time, not ds parsing
 -> absolute: try this first, if not possible, try relative 
 -> relative: attach this, using datastrucutre above
 
@@ -70,5 +68,7 @@ graph class only works on filepath, independent of uri
 
 
 
-
+### Current obsi parsing logics 
+- local graph: take current file, parse all forward links, attempt to resolve full path (if failed, omit) add these forward links to queue for next process, and set suitable backlinks, continue tills queue empty 
+- global graph: exhaustive
 

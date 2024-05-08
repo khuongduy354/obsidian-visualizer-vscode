@@ -22,7 +22,7 @@ export class GraphCreator {
     let filePath = URIHandler.joinPath(currentParent, start);
 
     let entries = await vscode.workspace.fs.readDirectory(
-      this.uriHandler.getFullURI(filePath)
+      this.getFullUri(filePath)
     );
 
     for (let entry of entries) {
