@@ -1,15 +1,10 @@
 # dev   
 
-## todo    
-0. doc current full logic of obsi, neo parsing
+## todo     
+0. remove resources ![[resource link]]
 1. fix datastrucutre 
 - use filename as idx for both Obsi & Neo 
 - add as below
-2. better gui  
-- clearer color, bigger text 
-- only show filename not fullpath 
-3. if forward links has same (relative) name to itself 
--> ignore forward link
 4. redesign path resolving logics
 
 

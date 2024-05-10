@@ -77,41 +77,52 @@ export class GraphCreator {
       if (!currentFile) break;
 
       if (!this.localGraph.has(currentFile)) {
-        // get all links of current file
-        const content = (
-          await vscode.workspace.openTextDocument(
-            this.getFullUri(currentFile, false)
+        let content = null;
+        try {
+          // get all links of current file
+          content = (
+            await vscode.workspace.openTextDocument(
+              this.getFullUri(currentFile, false)
+            )
           )
-        ).getText();
-        const backLinks = [...content.toString().matchAll(linkRegex)];
+            .getText()
+            .toString();
+        } catch (err) {
+          //empty file
+          this.localGraph.set(currentFile, []);
+          continue;
+        }
+        if (!content) continue;
+
+        const backLinks = [...content.matchAll(linkRegex)];
         let filePaths = backLinks.map((backLink) => {
           return backLink[1];
         });
 
         // attempt resolving full path
-        const filePathsProm = filePaths.map(async (filePath) => {
-          // path is absolute, no resolve
-          if (this.obsiFilesTracker.isAbs(filePath)) return filePath;
+        // const filePathsProm = filePaths.map(async (filePath) => {
+        //   // path is absolute, no resolve
+        //   if (this.obsiFilesTracker.isAbs(filePath)) return filePath;
 
-          // already available
-          let fullPath = this.obsiFilesTracker.getFullPath(filePath);
-          if (fullPath !== undefined) return fullPath;
+        //   // already available
+        //   let fullPath = this.obsiFilesTracker.getFullPath(filePath);
+        //   if (fullPath !== undefined) return fullPath;
 
-          // previously scan all but failed, skip
-          if (this.obsiFilesTracker.failedScans.has(filePath)) return undefined;
+        //   // previously scan all but failed, skip
+        //   if (this.obsiFilesTracker.failedScans.has(filePath)) return undefined;
 
-          await this.obsiFilesTracker.scanFullPath();
-          fullPath = this.obsiFilesTracker.getFullPath(filePath);
-          if (fullPath !== undefined) return fullPath;
+        //   await this.obsiFilesTracker.scanFullPath();
+        //   fullPath = this.obsiFilesTracker.getFullPath(filePath);
+        //   if (fullPath !== undefined) return fullPath;
 
-          // scan all but failed
-          this.obsiFilesTracker.failedScans.add(filePath);
-          return undefined;
-        });
+        //   // scan all but failed
+        //   this.obsiFilesTracker.failedScans.add(filePath);
+        //   return undefined;
+        // });
 
-        filePaths = (await Promise.all(filePathsProm)).filter(
-          (fp) => fp !== undefined
-        ) as string[];
+        // filePaths = (await Promise.all(filePathsProm)).filter(
+        //   (fp) => fp !== undefined
+        // ) as string[];
 
         queue = queue.concat(filePaths);
 
@@ -129,6 +140,7 @@ export class GraphCreator {
         this.localGraph.set(currentFile, filePaths);
       }
     }
+    console.log("Local graph: ", this.localGraph.size);
   }
 
   parseNeoFormat(isLocal = true) {
