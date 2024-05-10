@@ -57,6 +57,37 @@ export class GraphWebView {
     );
   }
 
+  getTextColor() {
+    switch (vscode.window.activeColorTheme.kind) {
+      case vscode.ColorThemeKind.Dark:
+        return "#FFFFFF";
+      case vscode.ColorThemeKind.Light:
+        return "#000000";
+      case vscode.ColorThemeKind.HighContrast:
+        return "#FFFFFF";
+      case vscode.ColorThemeKind.HighContrastLight:
+        return "#000000";
+      default:
+        return "#808080";
+    }
+  }
+  setTextScript() {
+    //TODO: offset text outside of the node
+    return `
+    <script> 
+    const texts = document.getElementsByClassName("text");        
+    for(let i = 0; i < texts.length; i++){
+      let text = texts[i];  
+
+      let filename = text.innerHTML.split("/").pop(); 
+      filename = filename !== undefined ? filename : text.innerHTML;  
+      text.innerHTML = filename  
+
+    } 
+    </script> 
+    `;
+  }
+
   getGraphWebViewHtml(
     libs: { neo4jlib: vscode.Uri | string; d3lib: vscode.Uri | string },
     data: string
@@ -80,9 +111,9 @@ export class GraphWebView {
       width: 100%;
     } 
     .text{ 
-      margin-top: 10px; 
+      margin-top: 100px; 
       background-color: #000000;  
-      fill:#808080
+      fill:${this.getTextColor()}
     }
 
     </style>
@@ -93,7 +124,7 @@ export class GraphWebView {
   </div>
 
     <script src="${libs.neo4jlib}"></script>
-    <script src="${libs.d3lib}"></script>
+    <script src="${libs.d3lib}"></script> 
     <script>
       const vscode = acquireVsCodeApi();
       var neo4jd3 = new Neo4jd3(".graph", {
@@ -118,6 +149,7 @@ export class GraphWebView {
         zoomFit: false, 
       });
     </script>
+    ${this.setTextScript()}
   </body>
 </html>
   `;
