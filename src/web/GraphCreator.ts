@@ -47,7 +47,7 @@ export class GraphCreator {
     await this.readDirRecursively(start, "");
 
     this.globalGraph = new Map();
-    const linkRegex = /\[\[(.*?)\]\]/g;
+    const linkRegex = /(?<!\!)\[\[(.*?)\]\]/g;
 
     for (let currentFile of this.mdList) {
       if (!this.globalGraph.has(currentFile)) {
@@ -70,7 +70,7 @@ export class GraphCreator {
 
     this.localGraph = new Map();
     let queue = [start];
-    const linkRegex = /\[\[(.*?)\]\]/g;
+    const linkRegex = /(?<!\!)\[\[(.*?)\]\]/g;
 
     while (queue.length > 0) {
       const currentFile = queue.pop();
@@ -142,7 +142,76 @@ export class GraphCreator {
     }
     console.log("Local graph: ", this.localGraph.size);
   }
+  parseNeoLocal(local: string) {
+    const target = this.localGraph;
 
+    let result: any = {
+      nodes: [],
+      relationships: [],
+    };
+
+    //backlinks
+    // if (this.localBacklinks.has(local)) {
+    //   const backlinks = this.localBacklinks.get(local) as string[];
+    //   for (let backlink of backlinks) {
+    //     result.nodes.push({
+    //       id: backlink,
+    //       labels: ["File"],
+    //       properties: {
+    //         fileFs: backlink,
+    //       },
+    //     });
+    //     result.relationships.push({
+    //       id: backlink + local,
+    //       type: "LINKS_TO",
+    //       startNode: backlink,
+    //       endNode: local,
+    //       properties: {},
+    //     });
+    //   }
+    // }
+
+    for (const [key, value] of target.entries()) {
+      const currNode = key;
+      result.nodes.push({
+        id: currNode,
+        labels: ["File"],
+        properties: {
+          fileFs: currNode,
+        },
+      });
+
+      // relations forward link
+      for (let relUri of value) {
+        const relNode = relUri;
+        if (!target.has(relNode)) continue;
+        result.relationships.push({
+          id: currNode + relNode,
+          type: "LINKS_TO",
+          startNode: currNode,
+          endNode: relNode,
+          properties: {},
+        });
+      }
+    }
+
+    const final = {
+      results: [
+        {
+          columns: ["File"],
+          data: [
+            {
+              graph: {
+                ...result,
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    this.localNeoFormat = final;
+  }
   parseNeoFormat(isLocal = true) {
     try {
       const target = isLocal ? this.localGraph : this.globalGraph;
@@ -162,6 +231,7 @@ export class GraphCreator {
           },
         });
 
+        // relations forward link
         for (let relUri of value) {
           const relNode = relUri;
           if (!target.has(relNode)) continue;
