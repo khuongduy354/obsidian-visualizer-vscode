@@ -119,7 +119,8 @@ export class GraphWebView {
     </style>
   </head>
   <body>
-  <div class="container">
+  <div class="container">  
+    <h3>Currently supports outgoing links (forward links) only</h3>
     <div class="graph"></div> 
   </div>
 
