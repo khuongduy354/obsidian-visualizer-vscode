@@ -60,7 +60,7 @@ export class GraphCreator {
           return backLink[1];
         });
 
-        // directory scan
+        // set global graph
         this.globalGraph.set(currentFile, filePaths);
       }
     }
@@ -233,8 +233,21 @@ export class GraphCreator {
 
         // relations forward link
         for (let relUri of value) {
+          console.log("relUri: ", relUri);
           const relNode = relUri;
-          if (!target.has(relNode)) continue;
+
+          // TODO: this make sure that relation to non-exist files must point to a node
+          if (!target.has(relNode)) {
+            result.nodes.push({
+              id: relNode,
+              labels: ["File"],
+              properties: {
+                fileFs: relNode,
+              },
+            });
+            target.set(relNode, []);
+          }
+
           result.relationships.push({
             id: currNode + relNode,
             type: "LINKS_TO",

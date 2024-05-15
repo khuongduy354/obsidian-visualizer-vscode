@@ -45,6 +45,7 @@ export function activate(context: vscode.ExtensionContext) {
           // render to webview
           const webview = new GraphWebView(context);
           const neoFormat = gCreator.getNeoFormat(false);
+          console.log("Global neo format: ", neoFormat);
           webview
             .initializeWebView(neoFormat, "Global Graph")
             // node onDoubleClick listener
