@@ -1,5 +1,31 @@
 # dev   
 
+# REVIEW  (handle this first)
+
+VSCode  
+
+
+- Graph   
+
+ 
+
+- Wrapped Workspace  
+Read file by file as usual lol. 
+Get resource (.md + images)  
+Get forward links  
+Resolve links -> target uri 
+-> Create a relation from resource.uri -> target uri 
+-> We can create backlinks at this step because exhaustively 
+
+Another prob: when to update graph ?    
+
+see boostrap function for workspace changes 
+-> update all graphs 
+ 
+=====>>>> Don't overthinking lol 
+
+
+
 ## todo     
 0. remove resources ![[resource link]]
 1. fix datastrucutre 
