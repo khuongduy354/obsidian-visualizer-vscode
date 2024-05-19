@@ -1,6 +1,12 @@
 import * as vscode from "vscode";
 import { URIHandler } from "./URIHandler";
-import { ObsiFilesTracker } from "./ObsiFilesTracker";
+import { ObsiFile, ObsiFilesTracker } from "./ObsiFilesTracker";
+
+type GraphOption = {
+  forwardLinks: boolean;
+  backwardLinks: boolean;
+  attachments: boolean;
+};
 
 export class GraphCreator {
   localGraph: Map<string, Array<string>> = new Map();
@@ -38,6 +44,68 @@ export class GraphCreator {
 
   getFullUri(path: string, isRel = true) {
     return this.uriHandler.getFullURI(path, isRel);
+  }
+
+  async parseNeoGlobal() {
+    const target = this.obsiFilesTracker;
+
+    let result: any = {
+      nodes: [],
+      relationships: [],
+    };
+
+    for (const [file, forwardFiles] of target.forwardLinks.entries()) {
+      // node creation
+      result.nodes.push({
+        id: file,
+        labels: ["File"],
+        properties: {
+          fileFs: file.path,
+        },
+      });
+
+      // forward links
+      for (let forwardFile of forwardFiles) {
+        // TODO: this make sure that relation to non-exist files must point to a node
+        // file not exist check
+        if (!target.files.has(forwardFile.path)) {
+          result.nodes.push({
+            id: forwardFile,
+            labels: ["File"],
+            properties: {
+              fileFs: forwardFile.path,
+            },
+          });
+          // target.set(relNode, []);
+        }
+
+        result.relationships.push({
+          id: file.path + forwardFile.path,
+          type: "LINKS_TO",
+          startNode: file,
+          endNode: forwardFile,
+          properties: {},
+        });
+      }
+    }
+
+    const final = {
+      results: [
+        {
+          columns: ["File"],
+          data: [
+            {
+              graph: {
+                ...result,
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    return final;
+    // see sample format in helper/sampleNeo4j.js
   }
 
   async parseGlobalGraph() {
@@ -142,56 +210,90 @@ export class GraphCreator {
     }
     console.log("Local graph: ", this.localGraph.size);
   }
-  parseNeoLocal(local: string) {
-    const target = this.localGraph;
 
+  parseNeoLocal(
+    localPath: string,
+    options: GraphOption | undefined = undefined
+  ) {
+    const startFile = this.obsiFilesTracker.files.get(localPath);
+    if (!startFile)
+      throw new Error("File not exist or tracked, please rerun extension.");
+
+    // TODO: add options
+    if (options !== undefined) {
+    }
+
+    // base format
     let result: any = {
       nodes: [],
       relationships: [],
     };
 
-    //backlinks
-    // if (this.localBacklinks.has(local)) {
-    //   const backlinks = this.localBacklinks.get(local) as string[];
-    //   for (let backlink of backlinks) {
-    //     result.nodes.push({
-    //       id: backlink,
-    //       labels: ["File"],
-    //       properties: {
-    //         fileFs: backlink,
-    //       },
-    //     });
-    //     result.relationships.push({
-    //       id: backlink + local,
-    //       type: "LINKS_TO",
-    //       startNode: backlink,
-    //       endNode: local,
-    //       properties: {},
-    //     });
-    //   }
-    // }
+    // duplicate check, I don't use a Set, cuz check exist cost more than Map
+    const addedNodes = new Map<ObsiFile, boolean>();
+    const addedRels = new Map<string, boolean>();
 
-    for (const [key, value] of target.entries()) {
-      const currNode = key;
-      result.nodes.push({
-        id: currNode,
-        labels: ["File"],
-        properties: {
-          fileFs: currNode,
-        },
-      });
+    // FORWARD LINKS
+    const forwardFiles = this.obsiFilesTracker.forwardLinks.get(startFile);
+    if (!forwardFiles)
+      throw new Error("File not exist or tracked, please rerun extension.");
 
-      // relations forward link
-      for (let relUri of value) {
-        const relNode = relUri;
-        if (!target.has(relNode)) continue;
+    for (let forwardFile of forwardFiles) {
+      // node
+      if (!addedNodes.has(forwardFile)) {
+        result.nodes.push({
+          id: forwardFile,
+          labels: ["File"],
+          properties: {
+            fileFs: forwardFile.path,
+          },
+        });
+        addedNodes.set(forwardFile, true);
+      }
+
+      // forward link
+      const linkId = startFile.path + forwardFile.path;
+      if (!addedRels.has(linkId)) {
         result.relationships.push({
-          id: currNode + relNode,
+          id: linkId,
           type: "LINKS_TO",
-          startNode: currNode,
-          endNode: relNode,
+          startNode: startFile,
+          endNode: forwardFile,
           properties: {},
         });
+        addedRels.set(linkId, true);
+      }
+    }
+
+    // BACKLINKS
+    const backFiles = this.obsiFilesTracker.backLinks.get(startFile);
+    if (!backFiles)
+      throw new Error("File not exist or tracked, please rerun extension.");
+
+    for (const backFile of backFiles) {
+      // node
+      if (!addedNodes.has(backFile)) {
+        result.nodes.push({
+          id: backFile,
+          labels: ["File"],
+          properties: {
+            fileFs: backFile.path,
+          },
+        });
+        addedNodes.set(backFile, true);
+      }
+
+      // backlinks
+      const linkId = backFile.path + startFile.path;
+      if (!addedRels.has(linkId)) {
+        result.relationships.push({
+          id: linkId,
+          type: "LINKS_TO",
+          startNode: backFile,
+          endNode: startFile,
+          properties: {},
+        });
+        addedRels.set(linkId, true);
       }
     }
 
@@ -210,131 +312,6 @@ export class GraphCreator {
       ],
     };
 
-    this.localNeoFormat = final;
+    return final;
   }
-  parseNeoFormat(isLocal = true) {
-    try {
-      const target = isLocal ? this.localGraph : this.globalGraph;
-
-      let result: any = {
-        nodes: [],
-        relationships: [],
-      };
-
-      for (const [key, value] of target.entries()) {
-        const currNode = key;
-        result.nodes.push({
-          id: currNode,
-          labels: ["File"],
-          properties: {
-            fileFs: currNode,
-          },
-        });
-
-        // relations forward link
-        for (let relUri of value) {
-          console.log("relUri: ", relUri);
-          const relNode = relUri;
-
-          // TODO: this make sure that relation to non-exist files must point to a node
-          if (!target.has(relNode)) {
-            result.nodes.push({
-              id: relNode,
-              labels: ["File"],
-              properties: {
-                fileFs: relNode,
-              },
-            });
-            target.set(relNode, []);
-          }
-
-          result.relationships.push({
-            id: currNode + relNode,
-            type: "LINKS_TO",
-            startNode: currNode,
-            endNode: relNode,
-            properties: {},
-          });
-        }
-      }
-
-      const final = {
-        results: [
-          {
-            columns: ["File"],
-            data: [
-              {
-                graph: {
-                  ...result,
-                },
-              },
-            ],
-          },
-        ],
-      };
-
-      if (isLocal) {
-        this.localNeoFormat = final;
-      } else {
-        this.globalNeoFormat = final;
-      }
-
-      // let sample = {
-      //   nodes: [
-      //     {
-      //       id: "1",
-      //       labels: ["User"],
-      //       properties: {
-      //         userId: "eisman",
-      //       },
-      //     },
-      //     {
-      //       id: "8",
-      //       labels: ["Project"],
-      //       properties: {
-      //         name: "neo4jd3",
-      //         title: "neo4jd3.js",
-      //         description: "Neo4j graph visualization using D3.js.",
-      //         url: "https://eisman.github.io/neo4jd3",
-      //       },
-      //     },
-      //   ],
-      //   relationships: [
-      //     {
-      //       id: "7",
-      //       type: "DEVELOPES",
-      //       startNode: "1",
-      //       endNode: "8",
-      //       properties: {
-      //         from: 1470002400000,
-      //       },
-      //       source: "1",
-      //       target: "8",
-      //       linknum: 1,
-      //     },
-      //   ],
-      // };
-    } catch (err) {
-      console.log("Parseing neo error: ", err);
-    }
-  }
-  getNeoFormat(isLocal = true) {
-    if (isLocal) {
-      if (!this.localNeoFormat) this.parseNeoFormat(true);
-      return this.localNeoFormat;
-    } else {
-      if (!this.globalNeoFormat) this.parseNeoFormat(false);
-      return this.globalNeoFormat;
-    }
-  }
-
-  getLocalGraphMap() {
-    return this.localGraph;
-  }
-
-  getGlobalGraphMap() {
-    return this.globalGraph;
-  }
-
-  //   getLocalGraph(filePath: string) {}
 }
