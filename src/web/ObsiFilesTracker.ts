@@ -1,7 +1,67 @@
 import { URIHandler } from "./URIHandler";
 import * as vscode from "vscode";
 
+export type ObsiFile = {
+  // relative path to root workspace
+  path: string;
+};
+
+// type Link = {
+//   from: File;
+//   to: File;
+// };
+
 export class ObsiFilesTracker {
+  files = new Map<string, ObsiFile>(); // exist files only, map path to file
+
+  // may contain links to non-exist files
+  forwardLinks = new Map<ObsiFile, Array<ObsiFile>>();
+  backLinks = new Map<ObsiFile, Array<ObsiFile>>();
+
+  extractForwardLinks(content: string): Array<ObsiFile> {
+    return [{ path: "" }];
+  }
+
+  async readFile(uri: vscode.Uri) {
+    const doc = await vscode.workspace.openTextDocument(uri);
+    return doc.getText();
+  }
+
+  async readAllWorkspaceFiles() {
+    this.forwardLinks.clear();
+    this.backLinks.clear();
+    // let files: [] = [];
+
+    if (!vscode.workspace.workspaceFolders)
+      throw new Error("No workspace found ");
+
+    for (const folder of vscode.workspace.workspaceFolders) {
+      console.log("folder: ", folder);
+      const uris = await vscode.workspace.findFiles(
+        new vscode.RelativePattern(folder.uri.path, "**/*")
+      );
+      console.log("files: ", uris.length);
+      const forwardLinks: ObsiFile[] = [];
+      for (const uri of uris) {
+        // check markdown
+        if (uri.path.split(".").pop() !== "md") continue;
+
+        const content = await this.readFile(uri);
+        forwardLinks.concat(this.extractForwardLinks(content));
+
+        const path = uri.toString();
+        this.forwardLinks.set({ path }, forwardLinks);
+        this.files.set(path, { path });
+
+        // TODO: backlinks
+      }
+    }
+  }
+
+  // TODO:
+  addFile() {}
+  deleteFile() {}
+
   // filename to 1 full path
   fileNameFullPathMap = new Map<string, string>();
   uriHandler: URIHandler;
