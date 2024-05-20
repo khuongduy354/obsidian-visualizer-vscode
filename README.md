@@ -13,7 +13,15 @@ Providing core obsidian features in VSCode: graphs, backlinks,...
 
 ![global graph demo](images/demo_dark.png)
 
+## Run from source 
+### Web 
+```js 
+npm run watch-web  
+npm run run-in-browser //another terminal 
+``` 
 
+### VSCode Desktop (run from VSCode)
+Press F5 or  Command Pallete >Debug: Start Debugging 
 
 
 ## Release Notes 
