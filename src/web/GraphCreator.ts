@@ -18,9 +18,12 @@ export class GraphCreator {
   uriHandler: URIHandler;
   obsiFilesTracker: ObsiFilesTracker;
 
-  constructor(uriHandler: URIHandler = new URIHandler()) {
+  constructor(
+    obsiFilesTracker: ObsiFilesTracker,
+    uriHandler: URIHandler = new URIHandler()
+  ) {
     this.uriHandler = uriHandler;
-    this.obsiFilesTracker = new ObsiFilesTracker(uriHandler);
+    this.obsiFilesTracker = obsiFilesTracker;
   }
 
   async readDirRecursively(start: string, currentParent: string) {

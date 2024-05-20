@@ -2,10 +2,24 @@ import * as vscode from "vscode";
 import { GraphCreator } from "./GraphCreator";
 import { GraphWebView } from "./webview/GraphWebView";
 import { URIHandler } from "./URIHandler";
+import { ObsiFilesTracker } from "./ObsiFilesTracker";
 
 export function activate(context: vscode.ExtensionContext) {
   try {
     const uriHandler = new URIHandler();
+    const obsiFilesTracker = new ObsiFilesTracker();
+
+    obsiFilesTracker
+      .readAllWorkspaceFiles()
+      .then(() => {
+        vscode.window.showInformationMessage("Files read");
+        console.log("FILE READ: READY to use");
+        console.log("FILE READ: map: ", obsiFilesTracker.files.size);
+      })
+      .catch((err) => {
+        console.error("FILE READ ERR: ", err);
+      });
+    const graphBuilder = new GraphCreator(obsiFilesTracker);
 
     let disposable2 = vscode.commands.registerTextEditorCommand(
       "obsidian-visualizer.showLocalGraph",
@@ -17,46 +31,44 @@ export function activate(context: vscode.ExtensionContext) {
         console.log("URI: ", textEditor.document.uri);
 
         // parse local graph
-        const gCreator = new GraphCreator();
-        vscode.window.showInformationMessage("Parsing local graph...");
-        gCreator.parseLocalGraph(textEditor.document.uri.fsPath).then(() => {
-          // render to webview
-          const webview = new GraphWebView(context);
-          webview
-            .initializeWebView(gCreator.getNeoFormat(), "Local Graph")
-            // node onDoubleClick listener
-            .setNodeListener(function (message: any) {
-              const fs = message.node.properties.fileFs;
-              vscode.commands.executeCommand(
-                "vscode.open",
-                uriHandler.getFullURI(fs)
-              );
-            });
-        });
+        const graph = graphBuilder.parseNeoLocal(textEditor.document.uri.path);
+        console.log("Local neo format: ", graph);
+
+        // render to webview
+        const webview = new GraphWebView(context);
+        webview
+          .initializeWebView(graph, "Local Graph")
+
+          // node onDoubleClick listener
+          .setNodeListener(function (message: any) {
+            const fs = message.node.properties.fileFs;
+            vscode.commands.executeCommand(
+              "vscode.open",
+              uriHandler.getFullURI(fs)
+            );
+          });
       }
     );
 
     let disposable3 = vscode.commands.registerCommand(
       "obsidian-visualizer.showGlobalGraph",
       () => {
-        const gCreator = new GraphCreator();
-        vscode.window.showInformationMessage("Parsing global graph...");
-        gCreator.parseGlobalGraph().then(() => {
-          // render to webview
-          const webview = new GraphWebView(context);
-          const neoFormat = gCreator.getNeoFormat(false);
-          console.log("Global neo format: ", neoFormat);
-          webview
-            .initializeWebView(neoFormat, "Global Graph")
-            // node onDoubleClick listener
-            .setNodeListener(function (message: any) {
-              const fs = message.node.properties.fileFs;
-              vscode.commands.executeCommand(
-                "vscode.open",
-                uriHandler.getFullURI(fs)
-              );
-            });
-        });
+        // parse global graph
+        const graph = graphBuilder.parseNeoGlobal();
+
+        // render to webview
+        const webview = new GraphWebView(context);
+        console.log("Global neo format: ", graph);
+        webview
+          .initializeWebView(graph, "Global Graph")
+          // node onDoubleClick listener
+          .setNodeListener(function (message: any) {
+            const fs = message.node.properties.fileFs;
+            vscode.commands.executeCommand(
+              "vscode.open",
+              uriHandler.getFullURI(fs)
+            );
+          });
       }
     );
 
