@@ -4,6 +4,9 @@ import * as vscode from "vscode";
 export type ObsiFile = {
   // relative path to root workspace
   path: string;
+
+  // full path that is accessible by vscode
+  fullPath?: string;
 };
 
 // type Link = {
@@ -45,22 +48,25 @@ export class ObsiFilesTracker {
       const pattern = new vscode.RelativePattern(folderUri, "**/*");
 
       const uris = await vscode.workspace.findFiles(pattern);
-      console.log("files: ", uris.length);
 
       const forwardLinks: ObsiFile[] = [];
-      for (const uri of uris) {
+      for (let uri of uris) {
         // check markdown
         if (uri.path.split(".").pop() !== "md") continue;
 
+        // parse forward links
+        uri = this.uriHandler.getFullURI(uri.path);
         const content = await this.readFile(uri);
         if (!content) continue;
 
         forwardLinks.concat(this.extractForwardLinks(content));
 
-        const path = uri.toString();
-        console.log("Tracking path: ", path);
-        this.forwardLinks.set({ path }, forwardLinks);
-        this.files.set(path, { path });
+        // save to data structure
+        const path = uri.path;
+        const file = { path, fullPath: uri.toString() };
+        console.log("Tracking: ", path);
+        this.forwardLinks.set(file, forwardLinks);
+        this.files.set(path, file);
 
         // TODO: backlinks
       }
@@ -107,7 +113,6 @@ export class ObsiFilesTracker {
   async readDirRecursively(start: string, currentParent: string) {
     // let path = currentParent + start + "/";
     let filePath = URIHandler.joinPath(currentParent, start);
-    console.log("file path: ", this.uriHandler.getFullURI(filePath).path);
 
     let entries = await vscode.workspace.fs.readDirectory(
       this.uriHandler.getFullURI(filePath)

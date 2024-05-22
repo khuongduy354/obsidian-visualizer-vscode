@@ -34,8 +34,12 @@ export class URIHandler {
     if (baseScheme === "vscode-vfs") return uri;
 
     // if testing
-    if (baseScheme === "vscode-test-web")
-      return vscode.Uri.joinPath(this.baseWorkspaceURI, path);
+    if (baseScheme === "vscode-test-web") {
+      // strip /static/extensions/fs
+      if (path.startsWith("/static/extensions/fs"))
+        path = path.replace("/static/extensions/fs", "");
+      return this.baseWorkspaceURI.with({ path });
+    }
 
     if (baseScheme === "http")
       return vscode.Uri.joinPath(this.baseWorkspaceURI, path);

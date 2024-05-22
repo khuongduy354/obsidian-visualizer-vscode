@@ -1,16 +1,13 @@
 # dev   
 
-Currently path reading issue, may resolve to old method 
-Try new RelativePattern("/", "**/*") to see its output  
-(why it works on desktop but not workspace)
- 
+test cases needed 
 
 
 ## todo     
 1. remove resources ![[resource link]]
-2. Fix file reads: 
-- work on desktop, not on web  
-- desktop is relative to root of linux /home/...
+<!-- 2. Fix file reads: 
+- work on desktop, not on web   done 
+- desktop is relative to root of linux /home/... done  -->
 
 3. redesign path resolving logics 
 
