@@ -23,8 +23,13 @@ export class ObsiFilesTracker {
   }
 
   async readFile(uri: vscode.Uri) {
-    const doc = await vscode.workspace.openTextDocument(uri);
-    return doc.getText();
+    try {
+      const doc = await vscode.workspace.openTextDocument(uri);
+      return doc.getText();
+    } catch (err) {
+      console.log("Error reading file: ", err);
+      return null;
+    }
   }
 
   async readAllWorkspaceFiles() {
@@ -36,20 +41,24 @@ export class ObsiFilesTracker {
       throw new Error("No workspace found ");
 
     for (const folder of vscode.workspace.workspaceFolders) {
-      console.log("folder: ", folder);
-      const uris = await vscode.workspace.findFiles(
-        new vscode.RelativePattern(folder.uri.path, "**/*")
-      );
+      const folderUri = this.uriHandler.getFullURI(folder.uri.path);
+      const pattern = new vscode.RelativePattern(folderUri, "**/*");
+
+      const uris = await vscode.workspace.findFiles(pattern);
       console.log("files: ", uris.length);
+
       const forwardLinks: ObsiFile[] = [];
       for (const uri of uris) {
         // check markdown
         if (uri.path.split(".").pop() !== "md") continue;
 
         const content = await this.readFile(uri);
+        if (!content) continue;
+
         forwardLinks.concat(this.extractForwardLinks(content));
 
         const path = uri.toString();
+        console.log("Tracking path: ", path);
         this.forwardLinks.set({ path }, forwardLinks);
         this.files.set(path, { path });
 
