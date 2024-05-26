@@ -4,12 +4,14 @@ test cases needed
 
 
 ## todo     
-1. remove resources ![[resource link]]
+1. remove resources ![[resource link]] 
+2. events  
 <!-- 2. Fix file reads: 
 - work on desktop, not on web   done 
 - desktop is relative to root of linux /home/... done  -->
 
 3. redesign path resolving logics 
+4. better GUI 
 
 # Features needed 
 - Attachments 

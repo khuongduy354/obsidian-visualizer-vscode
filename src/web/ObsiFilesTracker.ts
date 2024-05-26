@@ -22,7 +22,14 @@ export class ObsiFilesTracker {
   backLinks = new Map<ObsiFile, Array<ObsiFile>>();
 
   extractForwardLinks(content: string): Array<ObsiFile> {
-    return [{ path: "" }];
+    // TODO: ignore ![[...]]
+
+    const linkRegex = /(?<!\!)\[\[(.*?)\]\]/g;
+    let forwardLinks = [...content.matchAll(linkRegex)].map((forwardLink) => {
+      return { path: forwardLink[1] };
+    });
+
+    return forwardLinks;
   }
 
   async readFile(uri: vscode.Uri) {
@@ -49,7 +56,6 @@ export class ObsiFilesTracker {
 
       const uris = await vscode.workspace.findFiles(pattern);
 
-      const forwardLinks: ObsiFile[] = [];
       for (let uri of uris) {
         // check markdown
         if (uri.path.split(".").pop() !== "md") continue;
@@ -59,7 +65,7 @@ export class ObsiFilesTracker {
         const content = await this.readFile(uri);
         if (!content) continue;
 
-        forwardLinks.concat(this.extractForwardLinks(content));
+        const forwardLinks = this.extractForwardLinks(content);
 
         // save to data structure
         const path = uri.path;
