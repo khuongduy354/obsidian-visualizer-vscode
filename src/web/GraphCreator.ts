@@ -49,6 +49,119 @@ export class GraphCreator {
     return this.uriHandler.getFullURI(path, isRel);
   }
 
+  parseNeoLocal(
+    localPath: string,
+    options: GraphOption | undefined = undefined
+  ) {
+    const startFile = this.obsiFilesTracker.files.get(localPath);
+
+    if (startFile === undefined || startFile === null)
+      throw new Error("File not exist or tracked, please rerun extension.");
+
+    // TODO: add options
+    if (options !== undefined) {
+    }
+
+    // base format
+    let result: any = {
+      nodes: [
+        {
+          id: startFile.path,
+          labels: ["File"],
+          properties: {
+            fileFs: startFile.fullURI,
+          },
+        },
+      ],
+      relationships: [],
+    };
+
+    // duplicate check, I don't use a Set, cuz check exist cost more than Map
+    const addedNodes = new Map<ObsiFile, boolean>();
+    const addedRels = new Map<string, boolean>();
+
+    // FORWARD LINKS
+    const forwardFiles =
+      this.obsiFilesTracker.forwardLinks.get(startFile) || [];
+    // if (forwardFiles === undefined || forwardFiles === null)
+    //   throw new Error("File not exist or tracked, please rerun extension.");
+
+    for (let forwardFile of forwardFiles) {
+      // node
+      if (!addedNodes.has(forwardFile)) {
+        result.nodes.push({
+          id: forwardFile.path,
+          labels: ["File"],
+          properties: {
+            fileFs: forwardFile.fullURI,
+          },
+        });
+        addedNodes.set(forwardFile, true);
+      }
+
+      // forward link
+      const linkId = startFile.path + forwardFile.path;
+      if (!addedRels.has(linkId)) {
+        result.relationships.push({
+          id: linkId,
+          type: "LINKS_TO",
+          startNode: startFile.path,
+          endNode: forwardFile.path,
+          properties: {},
+        });
+        addedRels.set(linkId, true);
+      }
+    }
+
+    // BACKLINKS
+    const backFiles = this.obsiFilesTracker.backLinks.get(startFile) || [];
+    // if (!Array.isArray(backFiles))
+
+    for (const backFile of backFiles) {
+      // node
+      if (!addedNodes.has(backFile)) {
+        result.nodes.push({
+          id: backFile.path,
+          labels: ["File"],
+          properties: {
+            fileFs: backFile.fullURI,
+          },
+        });
+        addedNodes.set(backFile, true);
+      }
+
+      // backlinks
+      const linkId = backFile.path + startFile.path;
+      if (!addedRels.has(linkId)) {
+        result.relationships.push({
+          id: linkId,
+          type: "LINKS_TO",
+          startNode: backFile.path,
+          endNode: startFile.path,
+          properties: {},
+        });
+        addedRels.set(linkId, true);
+      }
+    }
+
+    const final = {
+      results: [
+        {
+          columns: ["File"],
+          data: [
+            {
+              graph: {
+                ...result,
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    return final;
+  }
+
   parseNeoGlobal() {
     const target = this.obsiFilesTracker;
 
@@ -63,7 +176,7 @@ export class GraphCreator {
         id: file.path,
         labels: ["File"],
         properties: {
-          fileFs: file.fullPath,
+          fileFs: file.fullURI,
         },
       });
 
@@ -73,10 +186,10 @@ export class GraphCreator {
         // file not exist check
         if (!target.files.has(forwardFile.path)) {
           result.nodes.push({
-            id: forwardFile,
+            id: forwardFile.path,
             labels: ["File"],
             properties: {
-              fileFs: forwardFile.path,
+              fileFs: forwardFile.fullURI,
             },
           });
           // target.set(relNode, []);
@@ -85,8 +198,8 @@ export class GraphCreator {
         result.relationships.push({
           id: file.path + forwardFile.path,
           type: "LINKS_TO",
-          startNode: file,
-          endNode: forwardFile,
+          startNode: file.path,
+          endNode: forwardFile.path,
           properties: {},
         });
       }
@@ -213,117 +326,4 @@ export class GraphCreator {
   //   }
   //   console.log("Local graph: ", this.localGraph.size);
   // }
-
-  parseNeoLocal(
-    localPath: string,
-    options: GraphOption | undefined = undefined
-  ) {
-    const startFile = this.obsiFilesTracker.files.get(localPath);
-
-    if (startFile === undefined || startFile === null)
-      throw new Error("File not exist or tracked, please rerun extension.");
-
-    // TODO: add options
-    if (options !== undefined) {
-    }
-
-    // base format
-    let result: any = {
-      nodes: [
-        {
-          id: startFile.path,
-          labels: ["File"],
-          properties: {
-            fileFs: startFile.fullPath,
-          },
-        },
-      ],
-      relationships: [],
-    };
-
-    // duplicate check, I don't use a Set, cuz check exist cost more than Map
-    const addedNodes = new Map<ObsiFile, boolean>();
-    const addedRels = new Map<string, boolean>();
-
-    // FORWARD LINKS
-    const forwardFiles =
-      this.obsiFilesTracker.forwardLinks.get(startFile) || [];
-    // if (forwardFiles === undefined || forwardFiles === null)
-    //   throw new Error("File not exist or tracked, please rerun extension.");
-
-    for (let forwardFile of forwardFiles) {
-      // node
-      if (!addedNodes.has(forwardFile)) {
-        result.nodes.push({
-          id: forwardFile.path,
-          labels: ["File"],
-          properties: {
-            fileFs: forwardFile.fullPath,
-          },
-        });
-        addedNodes.set(forwardFile, true);
-      }
-
-      // forward link
-      const linkId = startFile.path + forwardFile.path;
-      if (!addedRels.has(linkId)) {
-        result.relationships.push({
-          id: linkId,
-          type: "LINKS_TO",
-          startNode: startFile.path,
-          endNode: forwardFile.path,
-          properties: {},
-        });
-        addedRels.set(linkId, true);
-      }
-    }
-
-    // BACKLINKS
-    const backFiles = this.obsiFilesTracker.backLinks.get(startFile) || [];
-    // if (!Array.isArray(backFiles))
-
-    for (const backFile of backFiles) {
-      // node
-      if (!addedNodes.has(backFile)) {
-        result.nodes.push({
-          id: backFile.path,
-          labels: ["File"],
-          properties: {
-            fileFs: backFile.fullPath,
-          },
-        });
-        addedNodes.set(backFile, true);
-      }
-
-      // backlinks
-      const linkId = backFile.path + startFile.path;
-      if (!addedRels.has(linkId)) {
-        result.relationships.push({
-          id: linkId,
-          type: "LINKS_TO",
-          startNode: backFile.path,
-          endNode: startFile.fullPath,
-          properties: {},
-        });
-        addedRels.set(linkId, true);
-      }
-    }
-
-    const final = {
-      results: [
-        {
-          columns: ["File"],
-          data: [
-            {
-              graph: {
-                ...result,
-              },
-            },
-          ],
-        },
-      ],
-    };
-
-    return final;
-  }
 }

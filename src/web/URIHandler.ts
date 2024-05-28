@@ -38,6 +38,7 @@ export class URIHandler {
       // strip /static/extensions/fs
       if (path.startsWith("/static/extensions/fs"))
         path = path.replace("/static/extensions/fs", "");
+
       return this.baseWorkspaceURI.with({ path });
     }
 
