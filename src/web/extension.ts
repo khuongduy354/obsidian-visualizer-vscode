@@ -38,14 +38,12 @@ export function activate(context: vscode.ExtensionContext) {
         const webview = new GraphWebView(context);
         webview
           .initializeWebView(graph, "Local Graph")
-
           // node onDoubleClick listener
           .setNodeListener(function (message: any) {
-            const fs = message.node.properties.fileFs;
-            vscode.commands.executeCommand(
-              "vscode.open",
-              uriHandler.getFullURI(fs)
-            );
+            let uri = message.node.properties.fileFs;
+            uri = uriHandler.getFullURI(uri.path as string); // reparse to fix missing uri components
+
+            vscode.commands.executeCommand("vscode.open", uri);
           });
       }
     );
@@ -63,11 +61,10 @@ export function activate(context: vscode.ExtensionContext) {
           .initializeWebView(graph, "Global Graph")
           // node onDoubleClick listener
           .setNodeListener(function (message: any) {
-            const fs = message.node.properties.fileFs;
-            vscode.commands.executeCommand(
-              "vscode.open",
-              uriHandler.getFullURI(fs)
-            );
+            let uri = message.node.properties.fileFs;
+            uri = uriHandler.getFullURI(uri.path as string); // reparse to fix missing uri components
+            if (uri !== undefined)
+              vscode.commands.executeCommand("vscode.open", uri);
           });
       }
     );
