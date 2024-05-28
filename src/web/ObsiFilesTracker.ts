@@ -6,7 +6,7 @@ export type ObsiFile = {
   path: string;
 
   // full path that is accessible by vscode
-  fullPath?: string;
+  fullURI?: vscode.Uri;
 };
 
 // type Link = {
@@ -26,7 +26,17 @@ export class ObsiFilesTracker {
 
     const linkRegex = /(?<!\!)\[\[(.*?)\]\]/g;
     let forwardLinks = [...content.matchAll(linkRegex)].map((forwardLink) => {
-      return { path: forwardLink[1] };
+      const fullPath = this.getFullPath(forwardLink[1]);
+      let uri: vscode.Uri | undefined;
+
+      console.log("full path");
+      if (fullPath === "") uri = undefined;
+      else uri = this.uriHandler.getFullURI(fullPath);
+
+      return {
+        path: forwardLink[1],
+        fullURI: uri,
+      };
     });
 
     return forwardLinks;
@@ -52,8 +62,9 @@ export class ObsiFilesTracker {
 
     for (const folder of vscode.workspace.workspaceFolders) {
       const folderUri = this.uriHandler.getFullURI(folder.uri.path);
-      const pattern = new vscode.RelativePattern(folderUri, "**/*");
+      const pattern = new vscode.RelativePattern(folderUri, "**/*.md");
 
+      // todo: remove node_modules
       const uris = await vscode.workspace.findFiles(pattern);
 
       for (let uri of uris) {
@@ -69,7 +80,7 @@ export class ObsiFilesTracker {
 
         // save to data structure
         const path = uri.path;
-        const file = { path, fullPath: uri.toString() };
+        const file = { path, fullURI: uri };
         console.log("Tracking: ", path);
         this.forwardLinks.set(file, forwardLinks);
         this.files.set(path, file);
@@ -106,7 +117,8 @@ export class ObsiFilesTracker {
     return false;
   }
   getFullPath(fileName: string) {
-    return this.fileNameFullPathMap.get(fileName);
+    const fullPath = this.fileNameFullPathMap.get(fileName);
+    return !!fullPath ? fullPath : "";
   }
 
   async scanFullPath() {
