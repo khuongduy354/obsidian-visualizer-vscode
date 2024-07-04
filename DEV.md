@@ -1,18 +1,31 @@
-# dev   
+# dev    
+ 
 
-add event listeners and cleanups 
+Watcher: is independent of ObsiFilesTracker & graph creator    
+
+**compares to Foam 
+foam has workspace (obsifilestracker) + graph, watcher 
+these 3, has dispose. added to extension.ts subscriptions
+
+
+**done, glue the stuffs together  
+Watcher -> Change ObsiFilesTracker -> change GraphCreator  
+event capture 3 events: create, update, delete -> mock to handler in tracker, tracker finish === reupdate graph and notify.
+
+
+
+remove parse local, only global 
 
 ## todo     
-2. events  
+2. events   DONE 
 3. redesign path resolving logics 
-4. better GUI 
+4. better GUI  
+5. Notifications: file read initially,  notify errors  if cant parse one
+6. conviniences: parse graph command
 
 # Features needed 
 - Attachments 
 - Included, Excluded folders, Attachment folders
-
-
-
 
 # Design   
 

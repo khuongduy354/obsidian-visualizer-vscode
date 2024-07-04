@@ -21,7 +21,7 @@ export function activate(context: vscode.ExtensionContext) {
       });
     const graphBuilder = new GraphCreator(obsiFilesTracker);
 
-    let disposable2 = vscode.commands.registerTextEditorCommand(
+    const showLocalGraphCommand = vscode.commands.registerTextEditorCommand(
       "obsidian-visualizer.showLocalGraph",
       (textEditor, edit) => {
         // validate markdown
@@ -48,7 +48,7 @@ export function activate(context: vscode.ExtensionContext) {
       }
     );
 
-    let disposable3 = vscode.commands.registerCommand(
+    const showGlobalGraphCommand = vscode.commands.registerCommand(
       "obsidian-visualizer.showGlobalGraph",
       () => {
         // parse global graph
@@ -69,7 +69,12 @@ export function activate(context: vscode.ExtensionContext) {
       }
     );
 
-    context.subscriptions.push(disposable2, disposable3);
+    context.subscriptions.push(
+      showLocalGraphCommand,
+      showGlobalGraphCommand,
+      obsiFilesTracker,
+      graphBuilder
+    );
   } catch (e) {
     console.error(e);
   }

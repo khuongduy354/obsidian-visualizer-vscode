@@ -21,6 +21,11 @@ export class ObsiFilesTracker {
   forwardLinks = new Map<ObsiFile, Array<ObsiFile>>();
   backLinks = new Map<ObsiFile, Array<ObsiFile>>();
 
+  //events
+  onDidAddEmitter = new vscode.EventEmitter<ObsiFile>();
+  onDidDeleteEmitter = new vscode.EventEmitter<ObsiFile>();
+  onDidUpdateEmitter = new vscode.EventEmitter<ObsiFile>();
+
   extractForwardLinks(content: string): Array<ObsiFile> {
     // TODO: ignore ![[...]]
 
@@ -71,28 +76,65 @@ export class ObsiFilesTracker {
         // check markdown
         if (uri.path.split(".").pop() !== "md") continue;
 
-        // parse forward links
         uri = this.uriHandler.getFullURI(uri.path);
-        const content = await this.readFile(uri);
-        if (!content) continue;
+        this.set(uri);
+        // const content = await this.readFile(uri);
+        // if (!content) continue;
 
-        const forwardLinks = this.extractForwardLinks(content);
+        // const forwardLinks = this.extractForwardLinks(content);
 
-        // save to data structure
-        const path = uri.path;
-        const file = { path, fullURI: uri };
-        console.log("Tracking: ", path);
-        this.forwardLinks.set(file, forwardLinks);
-        this.files.set(path, file);
-
-        // TODO: backlinks
+        // // save to data structure
+        // const path = uri.path;
+        // const file = { path, fullURI: uri };
+        // console.log("Tracking: ", path);
+        // this.forwardLinks.set(file, forwardLinks);
+        // this.files.set(path, file);
       }
     }
   }
 
-  // TODO:
-  addFile() {}
-  deleteFile() {}
+  async set(uri: vscode.Uri) {
+    // check if uri tracked
+    let old = null;
+    if (this.files.has(uri.path)) {
+      old = this.files.get(uri.path);
+    }
+
+    const content = await this.readFile(uri);
+    if (!content) return;
+
+    // parse forward links
+    const forwardLinks = this.extractForwardLinks(content);
+
+    // save to data structure
+    const path = uri.path;
+    const file = { path, fullURI: uri };
+    console.log("Tracking: ", path);
+    this.forwardLinks.set(file, forwardLinks);
+    this.files.set(path, file);
+    // TODO: backlinks
+
+    // fire events
+    this.onDidUpdateEmitter.fire(uri);
+    this.onDidAddEmitter.fire(uri);
+  }
+
+  async delete(uri: vscode.Uri) {
+    const path = uri.path;
+
+    // delete from forward links and backlinks and files
+    const file = this.files.get(path);
+    let deleted = false;
+    if (file) {
+      this.forwardLinks.delete(file);
+      this.backLinks.delete(file);
+      this.files.delete(path);
+      deleted = true;
+    }
+
+    // delete event
+    deleted && this.onDidDeleteEmitter.fire(uri);
+  }
 
   // filename to 1 full path
   fileNameFullPathMap = new Map<string, string>();
@@ -104,6 +146,8 @@ export class ObsiFilesTracker {
 
   constructor(uriHandler = new URIHandler()) {
     this.uriHandler = uriHandler;
+
+    // setup watcher
   }
 
   isAbs(path: string) {
@@ -155,5 +199,11 @@ export class ObsiFilesTracker {
         await this.readDirRecursively(entry[0], filePath);
       }
     }
+  }
+
+  dispose() {
+    this.onDidAddEmitter.dispose();
+    this.onDidDeleteEmitter.dispose();
+    this.onDidUpdateEmitter.dispose();
   }
 }

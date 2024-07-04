@@ -18,12 +18,22 @@ export class GraphCreator {
   uriHandler: URIHandler;
   obsiFilesTracker: ObsiFilesTracker;
 
+  onDidUpdateEmitter = new vscode.EventEmitter<void>();
+  disposables: vscode.Disposable[] = [this.onDidUpdateEmitter];
+
   constructor(
     obsiFilesTracker: ObsiFilesTracker,
     uriHandler: URIHandler = new URIHandler()
   ) {
     this.uriHandler = uriHandler;
     this.obsiFilesTracker = obsiFilesTracker;
+
+    //events
+    this.disposables.push(
+      this.obsiFilesTracker.onDidAddEmitter.event(this.parseNeoGlobal),
+      this.obsiFilesTracker.onDidDeleteEmitter.event(this.parseNeoGlobal),
+      this.obsiFilesTracker.onDidUpdateEmitter.event(this.parseNeoGlobal)
+    );
   }
 
   async readDirRecursively(start: string, currentParent: string) {
@@ -222,108 +232,12 @@ export class GraphCreator {
 
     return final;
     // see sample format in helper/sampleNeo4j.js
+    // event
+    this.onDidUpdateEmitter.fire();
   }
 
-  // async parseGlobalGraph() {
-  //   const start = "/";
-  //   this.mdList = [];
-
-  //   await this.readDirRecursively(start, "");
-
-  //   this.globalGraph = new Map();
-  //   const linkRegex = /(?<!\!)\[\[(.*?)\]\]/g;
-
-  //   for (let currentFile of this.mdList) {
-  //     if (!this.globalGraph.has(currentFile)) {
-  //       // get all links of current file
-  //       const content = (
-  //         await vscode.workspace.openTextDocument(this.getFullUri(currentFile))
-  //       ).getText();
-  //       const backLinks = [...content.toString().matchAll(linkRegex)];
-  //       const filePaths = backLinks.map((backLink) => {
-  //         return backLink[1];
-  //       });
-
-  //       // set global graph
-  //       this.globalGraph.set(currentFile, filePaths);
-  //     }
-  //   }
-  // }
-  // async parseLocalGraph(start: string) {
-  //   // for each file, insert into map in file_path-links_to_file_path format
-
-  //   this.localGraph = new Map();
-  //   let queue = [start];
-  //   const linkRegex = /(?<!\!)\[\[(.*?)\]\]/g;
-
-  //   while (queue.length > 0) {
-  //     const currentFile = queue.pop();
-  //     if (!currentFile) break;
-
-  //     if (!this.localGraph.has(currentFile)) {
-  //       let content = null;
-  //       try {
-  //         // get all links of current file
-  //         content = (
-  //           await vscode.workspace.openTextDocument(
-  //             this.getFullUri(currentFile, false)
-  //           )
-  //         )
-  //           .getText()
-  //           .toString();
-  //       } catch (err) {
-  //         //empty file
-  //         this.localGraph.set(currentFile, []);
-  //         continue;
-  //       }
-  //       if (!content) continue;
-
-  //       const backLinks = [...content.matchAll(linkRegex)];
-  //       let filePaths = backLinks.map((backLink) => {
-  //         return backLink[1];
-  //       });
-
-  //       // attempt resolving full path
-  //       // const filePathsProm = filePaths.map(async (filePath) => {
-  //       //   // path is absolute, no resolve
-  //       //   if (this.obsiFilesTracker.isAbs(filePath)) return filePath;
-
-  //       //   // already available
-  //       //   let fullPath = this.obsiFilesTracker.getFullPath(filePath);
-  //       //   if (fullPath !== undefined) return fullPath;
-
-  //       //   // previously scan all but failed, skip
-  //       //   if (this.obsiFilesTracker.failedScans.has(filePath)) return undefined;
-
-  //       //   await this.obsiFilesTracker.scanFullPath();
-  //       //   fullPath = this.obsiFilesTracker.getFullPath(filePath);
-  //       //   if (fullPath !== undefined) return fullPath;
-
-  //       //   // scan all but failed
-  //       //   this.obsiFilesTracker.failedScans.add(filePath);
-  //       //   return undefined;
-  //       // });
-
-  //       // filePaths = (await Promise.all(filePathsProm)).filter(
-  //       //   (fp) => fp !== undefined
-  //       // ) as string[];
-
-  //       queue = queue.concat(filePaths);
-
-  //       // set backlinks
-  //       // TODO: bug when filename overlap, but since i skip absolute path above, it should be fine
-  //       filePaths.forEach((filePath) => {
-  //         if (!this.localBacklinks.has(filePath)) {
-  //           this.localBacklinks.set(filePath, [currentFile]);
-  //         } else {
-  //           this.localBacklinks.get(filePath)?.push(currentFile);
-  //         }
-  //       });
-
-  //       // set this file forward link
-  //       this.localGraph.set(currentFile, filePaths);
-  //     }
-  //   }
-  //   console.log("Local graph: ", this.localGraph.size);
-  // }
+  dispose() {
+    this.disposables.forEach((d) => d.dispose());
+    this.disposables = [];
+  }
 }
