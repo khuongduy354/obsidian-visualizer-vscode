@@ -3,11 +3,13 @@ import { GraphCreator } from "./GraphCreator";
 import { GraphWebView } from "./webview/GraphWebView";
 import { URIHandler } from "./URIHandler";
 import { ObsiFilesTracker } from "./ObsiFilesTracker";
+import { getWatcher } from "./VSCodeWatcher";
 
 export function activate(context: vscode.ExtensionContext) {
   try {
     const uriHandler = new URIHandler();
     const obsiFilesTracker = new ObsiFilesTracker();
+    const watcher = getWatcher(obsiFilesTracker);
 
     obsiFilesTracker
       .readAllWorkspaceFiles()
@@ -72,6 +74,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
       showLocalGraphCommand,
       showGlobalGraphCommand,
+      watcher,
       obsiFilesTracker,
       graphBuilder
     );
