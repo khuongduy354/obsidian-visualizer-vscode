@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { ObsiFilesTracker } from "./ObsiFilesTracker";
 export type ObsiEvents = {};
 
-export function getWatcher(workspace: ObsiFilesTracker) {
+export function setWatcher(workspace: ObsiFilesTracker) {
   const watcher = vscode.workspace.createFileSystemWatcher("**/*");
 
   // TODO: add a matcher based on user configs (includes excludes folders to watch)

@@ -36,24 +36,24 @@ export class GraphCreator {
     );
   }
 
-  async readDirRecursively(start: string, currentParent: string) {
-    // let path = currentParent + start + "/";
-    let filePath = URIHandler.joinPath(currentParent, start);
+  // async readDirRecursively(start: string, currentParent: string) {
+  //   // let path = currentParent + start + "/";
+  //   let filePath = URIHandler.joinPath(currentParent, start);
 
-    let entries = await vscode.workspace.fs.readDirectory(
-      this.getFullUri(filePath)
-    );
+  //   let entries = await vscode.workspace.fs.readDirectory(
+  //     this.getFullUri(filePath)
+  //   );
 
-    for (let entry of entries) {
-      if (entry[1] === 1) {
-        const isMd = entry[0].split(".").pop() === "md";
-        if (isMd) this.mdList.push(URIHandler.joinPath(filePath, entry[0]));
-      }
-      if (entry[1] === 2) {
-        await this.readDirRecursively(entry[0], filePath);
-      }
-    }
-  }
+  //   for (let entry of entries) {
+  //     if (entry[1] === 1) {
+  //       const isMd = entry[0].split(".").pop() === "md";
+  //       if (isMd) this.mdList.push(URIHandler.joinPath(filePath, entry[0]));
+  //     }
+  //     if (entry[1] === 2) {
+  //       await this.readDirRecursively(entry[0], filePath);
+  //     }
+  //   }
+  // }
 
   getFullUri(path: string, isRel = true) {
     return this.uriHandler.getFullURI(path, isRel);
