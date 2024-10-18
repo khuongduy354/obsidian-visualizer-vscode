@@ -98,10 +98,10 @@ export class ObsiFilesTracker {
 
   async set(uri: vscode.Uri) {
     // check if uri tracked
-    let old = null;
-    if (this.files.has(uri.path)) {
-      old = this.files.get(uri.path);
-    }
+    // let old = null;
+    // if (this.files.has(uri.path)) {
+    //   old = this.files.get(uri.path);
+    // }
 
     const content = await this.readFile(uri);
     if (!content) return;
