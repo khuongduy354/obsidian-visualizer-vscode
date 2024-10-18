@@ -15,8 +15,9 @@ export function activate(context: vscode.ExtensionContext) {
       .readAllWorkspaceFiles()
       .then(() => {
         vscode.window.showInformationMessage(
-          "Files read " + obsiFilesTracker.files.size.toString()
+          "Files read " + obsiFilesTracker.files.size
         );
+        console.log("FILE READ: map: ", obsiFilesTracker.files);
       })
       .catch((err) => {
         console.error("FILE READ ERR: ", err);
@@ -37,31 +38,31 @@ export function activate(context: vscode.ExtensionContext) {
       globalGraph = graphBuilder.parseNeoGlobal();
     });
 
-    // const showLocalGraphCommand = vscode.commands.registerTextEditorCommand(
-    //   "obsidian-visualizer.showLocalGraph",
-    //   (textEditor, edit) => {
-    //     // validate markdown
-    //     const isMd = textEditor.document.fileName.split(".").pop() === "md";
-    //     if (!isMd) return;
+    const showLocalGraphCommand = vscode.commands.registerTextEditorCommand(
+      "obsidian-visualizer.showLocalGraph",
+      (textEditor, edit) => {
+        // validate markdown
+        const isMd = textEditor.document.fileName.split(".").pop() === "md";
+        if (!isMd) return;
 
-    //     console.log("URI: ", textEditor.document.uri);
+        console.log("URI: ", textEditor.document.uri);
 
-    //     // parse local graph
-    //     const graph = graphBuilder.parseNeoLocal(textEditor.document.uri.path);
+        // parse local graph
+        const graph = graphBuilder.parseNeoLocal(textEditor.document.uri.path);
 
-    //     // render to webview
-    //     const webview = new GraphWebView(context);
-    //     webview
-    //       .initializeWebView(graph, "Local Graph")
-    //       // node onDoubleClick listener
-    //       .setNodeListener(function (message: any) {
-    //         let uri = message.node.properties.fileFs;
-    //         uri = uriHandler.getFullURI(uri.path as string); // reparse to fix missing uri components
+        // render to webview
+        const webview = new GraphWebView(context);
+        webview
+          .initializeWebView(graph, "Local Graph")
+          // node onDoubleClick listener
+          .setNodeListener(function (message: any) {
+            let uri = message.node.properties.fileFs;
+            uri = uriHandler.getFullURI(uri.path as string); // reparse to fix missing uri components
 
-    //         vscode.commands.executeCommand("vscode.open", uri);
-    //       });
-    //   }
-    // );
+            vscode.commands.executeCommand("vscode.open", uri);
+          });
+      }
+    );
 
     const showGlobalGraphCommand = vscode.commands.registerCommand(
       "obsidian-visualizer.showGlobalGraph",
@@ -95,6 +96,7 @@ export function activate(context: vscode.ExtensionContext) {
             );
 
             globalGraph = graphBuilder.parseNeoGlobal();
+            console.log("File read: ", [...obsiFilesTracker.files.entries()]);
           })
           .catch((err) => {
             console.error("FILE READ ERR: ", err);
@@ -103,10 +105,10 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     context.subscriptions.push(
-      // showLocalGraphCommand,
+      showLocalGraphCommand,
       showGlobalGraphCommand,
       watcher,
-      // obsiFilesTracker,
+      obsiFilesTracker,
       graphBuilder,
       forceWorkspaceParseCommand
     );

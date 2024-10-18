@@ -124,7 +124,8 @@ export class GraphCreator {
     }
 
     // BACKLINKS
-    const backFiles = this.obsiFilesTracker.backLinks.get(startFile) || [];
+    const backFiles = this.obsiFilesTracker.backLinks.get(startFile.path) || [];
+    console.log("Backlinks of: ", startFile, "is: ", backFiles);
     // if (!Array.isArray(backFiles))
 
     for (const backFile of backFiles) {

@@ -19,7 +19,7 @@ export class ObsiFilesTracker {
 
   // may contain links to non-exist files
   forwardLinks = new Map<ObsiFile, Array<ObsiFile>>();
-  backLinks = new Map<ObsiFile, Array<ObsiFile>>();
+  backLinks = new Map<string, Array<ObsiFile>>();
 
   //events
   onDidAddEmitter = new vscode.EventEmitter<ObsiFile>();
@@ -34,7 +34,6 @@ export class ObsiFilesTracker {
       const fullPath = this.getFullPath(forwardLink[1]);
       let uri: vscode.Uri | undefined;
 
-      console.log("full path");
       if (fullPath === "") uri = undefined;
       else uri = this.uriHandler.getFullURI(fullPath);
 
@@ -68,8 +67,12 @@ export class ObsiFilesTracker {
     for (const folder of vscode.workspace.workspaceFolders) {
       const folderUri = this.uriHandler.getFullURI(folder.uri.path);
       const pattern = new vscode.RelativePattern(folderUri, "**/*.md");
+      // const excludePattern = new vscode.RelativePattern(
+      //   "",
+      //   "**/node_modules/**"
+      // );
 
-      // todo: remove node_modules
+      // todo: remove node_modules, after VSCode fix this issue
       const uris = await vscode.workspace.findFiles(pattern);
 
       for (let uri of uris) {
@@ -77,7 +80,7 @@ export class ObsiFilesTracker {
         if (uri.path.split(".").pop() !== "md") continue;
 
         uri = this.uriHandler.getFullURI(uri.path);
-        this.set(uri);
+        await this.set(uri);
         // const content = await this.readFile(uri);
         // if (!content) continue;
 
@@ -114,16 +117,29 @@ export class ObsiFilesTracker {
     this.files.set(path, file);
 
     // TODO: backlinks
-    // for (let targetFile of forwardLinks) {
-    //   // for every file with this uri (x)  point to file (y)
-    //   // append x as y's backlink
-    //   let backLinks = this.backLinks.get(targetFile);
-    //   this.backLinks.set(targetFile, backLinks ? [...backLinks, file] : [file]);
+    for (let targetFile of forwardLinks) {
+      if (!targetFile.path.startsWith("/")) {
+        // TODO: resolve file name or relative path here;
+        continue;
+      }
+      let fullURI = this.uriHandler.getFullURI(targetFile.path);
+      targetFile = {
+        path: targetFile.path,
+        uri: fullURI,
+      } as ObsiFile;
 
-    //   if (!this.files.has(targetFile.path)) {
-    //     this.files.set(targetFile.path, targetFile);
-    //   }
-    // }
+      // for every file with this uri (x)  point to file (y)
+      // append x as y's backlink
+      let backLinks = this.backLinks.get(targetFile.path);
+      this.backLinks.set(
+        targetFile.path,
+        backLinks ? [...backLinks, file] : [file]
+      );
+
+      if (!this.files.has(targetFile.path)) {
+        this.files.set(targetFile.path, targetFile);
+      }
+    }
 
     // fire events
     this.onDidUpdateEmitter.fire(uri);
@@ -138,7 +154,7 @@ export class ObsiFilesTracker {
     let deleted = false;
     if (file) {
       this.forwardLinks.delete(file);
-      this.backLinks.delete(file);
+      this.backLinks.delete(file.path);
       this.files.delete(path);
       deleted = true;
     }

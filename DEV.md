@@ -1,11 +1,15 @@
 # now    
  
 
-5. backlinks parse # KIND OF DONE 
+5. redesign cases for reso,ving/ creating files... 
+5. change to frp for all map
+6. graph backlinks toggle GUI
+3. redesign path resolving logics (to fix desktop bugs) and provide better docs
 4. testing  # especially on links parse   
-4. commented out local, addit again  based on the newly created backlinks
-3. redesign path resolving logics (to fix desktop bugs)
 
+5. backlinks workspace parse # DONE   
+6. add ignore node_modules for easier testing  
+-> solved by testing on different stuffs #DONE  
 ## plans ahead    
 4. better GUI  
 5. Notifications: file read initially,  notify errors  if cant parse one 
@@ -13,7 +17,8 @@
 6. clear todos
 
 - Attachments handling
-- Included, Excluded folders, Attachment folders  
+- Included, Excluded folders, Attachment folders   
+-> Exclude is a bug in vscode, which works in desktop but not in browser...
 
 # Working features  
 ### on web only 
@@ -35,12 +40,15 @@ Events: File changes -> Workspace read that file -> Graph reparse all
 Files -> Obsi -> Neo (graph json)
 
 + Link resolver component 
-- given a filename -> resolve full path, null if not resolveable 
+- given a filename -> resolve full path, null if not resolveable  
+- if 2 file same name (different path), then pick 1 by default (that's how obsidian handle), apply for both backlinks and forwardlinks
 
-+ Obsi Data strucutre - representing obsidian file strucutre (use filename as idx)
-- filename -> fullpath  
-- filename -> forward links  
-- filename -> backward links  
++ Obsi Data strucutre - representing obsidian file strucutre (use filename as idx) 
+frp = file relative path  
+obsifile = frp + full uri
+- frp -> obsifile
+- frp -> forward links = obsifile[]
+- frp -> backward links = obsifile[]
 
 
 + Parsing neo 
