@@ -4,6 +4,7 @@ import { GraphWebView } from "./webview/GraphWebView";
 import { URIHandler } from "./URIHandler";
 import { ObsiFilesTracker } from "./ObsiFilesTracker";
 import { setWatcher } from "./VSCodeWatcher";
+import { Resolver } from "./Resolver";
 
 export function activate(context: vscode.ExtensionContext) {
   try {

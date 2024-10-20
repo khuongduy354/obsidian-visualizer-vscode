@@ -1,14 +1,12 @@
 # now    
  
-3. redesign path resolving logics (to fix desktop bugs) and provide better docs 
-(due to not resolve, some files are duplicated)
 4. testing  # especially on links parse   
-
-## plans ahead    
 4. better GUI 
 - showing files despite not exist (as blurred)   
 - highlighted when mouse over a node, one color for backlinks, one color for forwards 
 5. Notifications: file read initially,  notify errors  if cant parse one 
+
+## plans ahead    
 5. search
 6. clear todos
 
@@ -20,7 +18,9 @@
 ### on web only 
 - Show global graph 
 - Show local graph forward links + backwardlinks
-- Force reparse
+- Force reparse 
+- Link resolve
+- GUI toggle forward links
 
 # backlog 
 - bug on desktop version -> link  
