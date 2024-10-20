@@ -7,6 +7,7 @@ import { setWatcher } from "./VSCodeWatcher";
 
 export function activate(context: vscode.ExtensionContext) {
   try {
+    // initial run
     const uriHandler = new URIHandler();
     const obsiFilesTracker = new ObsiFilesTracker();
     const watcher = setWatcher(obsiFilesTracker);
@@ -14,10 +15,7 @@ export function activate(context: vscode.ExtensionContext) {
     obsiFilesTracker
       .readAllWorkspaceFiles()
       .then(() => {
-        vscode.window.showInformationMessage(
-          "Files read " + obsiFilesTracker.files.size
-        );
-        console.log("FILE READ: map: ", obsiFilesTracker.files);
+        vscode.window.showInformationMessage("Files read ");
       })
       .catch((err) => {
         console.error("FILE READ ERR: ", err);
@@ -38,6 +36,7 @@ export function activate(context: vscode.ExtensionContext) {
       globalGraph = graphBuilder.parseNeoGlobal();
     });
 
+    // commands
     const showLocalGraphCommand = vscode.commands.registerTextEditorCommand(
       "obsidian-visualizer.showLocalGraph",
       (textEditor, edit) => {
@@ -45,7 +44,7 @@ export function activate(context: vscode.ExtensionContext) {
         const isMd = textEditor.document.fileName.split(".").pop() === "md";
         if (!isMd) return;
 
-        console.log("URI: ", textEditor.document.uri);
+        console.log("URI for local graph: ", textEditor.document.uri);
 
         // parse local graph
         const graph = graphBuilder.parseNeoLocal(textEditor.document.uri.path);
@@ -55,11 +54,13 @@ export function activate(context: vscode.ExtensionContext) {
         webview
           .initializeWebView(graph, "Local Graph")
           // node onDoubleClick listener
-          .setNodeListener(function (message: any) {
-            let uri = message.node.properties.fileFs;
-            uri = uriHandler.getFullURI(uri.path as string); // reparse to fix missing uri components
+          .setNodeListener({
+            onNodeDoubleClick: function (message: any) {
+              let uri = message.node.properties.fileFs;
+              uri = uriHandler.getFullURI(uri.path as string); // reparse to fix missing uri components
 
-            vscode.commands.executeCommand("vscode.open", uri);
+              vscode.commands.executeCommand("vscode.open", uri);
+            },
           });
       }
     );
@@ -72,14 +73,20 @@ export function activate(context: vscode.ExtensionContext) {
 
         // render to webview
         const webview = new GraphWebView(context);
+        console.log("Global Graph: ", globalGraph.results[0].data[0].graph);
         webview
           .initializeWebView(globalGraph, "Global Graph")
           // node onDoubleClick listener
-          .setNodeListener(function (message: any) {
-            let uri = message.node.properties.fileFs;
-            uri = uriHandler.getFullURI(uri.path as string); // reparse to fix missing uri components
-            if (uri !== undefined)
-              vscode.commands.executeCommand("vscode.open", uri);
+          .setNodeListener({
+            onNodeDoubleClick: function (node: any) {
+              let uri = node.properties.fileFs;
+              uri = uriHandler.getFullURI(uri.path as string); // reparse to fix missing uri components
+              if (uri !== undefined)
+                vscode.commands.executeCommand("vscode.open", uri);
+            },
+            onGraphOptionChanged: function (graphOption: any) {
+              console.log("Graph Option Changed: ", graphOption);
+            },
           });
       }
     );
@@ -90,13 +97,9 @@ export function activate(context: vscode.ExtensionContext) {
         obsiFilesTracker
           .readAllWorkspaceFiles()
           .then(() => {
-            console.log("FILE READ: map: ", obsiFilesTracker.files.size);
-            vscode.window.showInformationMessage(
-              "Files read " + obsiFilesTracker.files.size.toString()
-            );
+            vscode.window.showInformationMessage("Files read ");
 
             globalGraph = graphBuilder.parseNeoGlobal();
-            console.log("File read: ", [...obsiFilesTracker.files.entries()]);
           })
           .catch((err) => {
             console.error("FILE READ ERR: ", err);

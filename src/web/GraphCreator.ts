@@ -2,19 +2,19 @@ import * as vscode from "vscode";
 import { URIHandler } from "./URIHandler";
 import { ObsiFile, ObsiFilesTracker } from "./ObsiFilesTracker";
 
-type GraphOption = {
+export type GraphOption = {
   forwardLinks: boolean;
   backwardLinks: boolean;
-  attachments: boolean;
+  // attachments: boolean;
 };
 
 export class GraphCreator {
-  localGraph: Map<string, Array<string>> = new Map();
-  localBacklinks: Map<string, Array<string>> = new Map();
-  globalNeoFormat: any = null;
-  localNeoFormat: any = null;
-  globalGraph: Map<string, Array<string>> = new Map();
-  mdList: string[] = [];
+  // localGraph: Map<string, Array<string>> = new Map();
+  // localBacklinks: Map<string, Array<string>> = new Map();
+  // globalNeoFormat: any = null;
+  // localNeoFormat: any = null;
+  // globalGraph: Map<string, Array<string>> = new Map();
+  // mdList: string[] = [];
   uriHandler: URIHandler;
   obsiFilesTracker: ObsiFilesTracker;
 
@@ -28,12 +28,12 @@ export class GraphCreator {
     this.uriHandler = uriHandler;
     this.obsiFilesTracker = obsiFilesTracker;
 
-    //events
-    this.disposables.push(
-      this.obsiFilesTracker.onDidAddEmitter.event(this.parseNeoGlobal),
-      this.obsiFilesTracker.onDidDeleteEmitter.event(this.parseNeoGlobal),
-      this.obsiFilesTracker.onDidUpdateEmitter.event(this.parseNeoGlobal)
-    );
+    // TODO: i think these can be parse at runtime for more accuracy
+    // this.disposables.push(
+    //   this.obsiFilesTracker.onDidAddEmitter.event(this.parseNeoGlobal),
+    //   this.obsiFilesTracker.onDidDeleteEmitter.event(this.parseNeoGlobal),
+    //   this.obsiFilesTracker.onDidUpdateEmitter.event(this.parseNeoGlobal)
+    // );
   }
 
   // async readDirRecursively(start: string, currentParent: string) {
@@ -63,7 +63,7 @@ export class GraphCreator {
     localPath: string,
     options: GraphOption | undefined = undefined
   ) {
-    const startFile = this.obsiFilesTracker.files.get(localPath);
+    const startFile = this.uriHandler.getFullURI(localPath);
 
     if (startFile === undefined || startFile === null)
       throw new Error("File not exist or tracked, please rerun extension.");
@@ -79,7 +79,7 @@ export class GraphCreator {
           id: startFile.path,
           labels: ["File"],
           properties: {
-            fileFs: startFile.fullURI,
+            fileFs: startFile,
           },
         },
       ],
@@ -92,7 +92,7 @@ export class GraphCreator {
 
     // FORWARD LINKS
     const forwardFiles =
-      this.obsiFilesTracker.forwardLinks.get(startFile) || [];
+      this.obsiFilesTracker.forwardLinks.get(startFile.path) || [];
     // if (forwardFiles === undefined || forwardFiles === null)
     //   throw new Error("File not exist or tracked, please rerun extension.");
 
@@ -184,10 +184,10 @@ export class GraphCreator {
     for (const [file, forwardFiles] of target.forwardLinks.entries()) {
       // node creation
       result.nodes.push({
-        id: file.path,
+        id: file,
         labels: ["File"],
         properties: {
-          fileFs: file.fullURI,
+          fileFs: this.uriHandler.getFullURI(file),
         },
       });
 
@@ -195,7 +195,7 @@ export class GraphCreator {
       for (let forwardFile of forwardFiles) {
         // TODO: this make sure that relation to non-exist files must point to a node
         // file not exist check
-        if (!target.files.has(forwardFile.path)) {
+        if (!target.forwardLinks.has(forwardFile.path)) {
           result.nodes.push({
             id: forwardFile.path,
             labels: ["File"],
@@ -207,9 +207,9 @@ export class GraphCreator {
         }
 
         result.relationships.push({
-          id: file.path + forwardFile.path,
+          id: file + forwardFile.path,
           type: "LINKS_TO",
-          startNode: file.path,
+          startNode: file,
           endNode: forwardFile.path,
           properties: {},
         });
@@ -233,8 +233,6 @@ export class GraphCreator {
 
     return final;
     // see sample format in helper/sampleNeo4j.js
-    // event
-    this.onDidUpdateEmitter.fire();
   }
 
   dispose() {

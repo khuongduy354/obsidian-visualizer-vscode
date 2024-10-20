@@ -1,9 +1,10 @@
 # now    
  
-
-5. redesign cases for reso,ving/ creating files... 
-5. change to frp for all map
+- bug when show backlinks in global, 2 files are not the same =>  duplicate nodes
+- bug when forwardlink points to something not exist, causing global not parse
+5. change to fap for all map, fap -> full uri is needed
 6. graph backlinks toggle GUI
+7. showing files despite not exist (as blurred)
 3. redesign path resolving logics (to fix desktop bugs) and provide better docs
 4. testing  # especially on links parse   
 
@@ -23,10 +24,10 @@
 # Working features  
 ### on web only 
 - Show global graph 
-<!-- - Show local graph forward links -->
+- Show local graph forward links + backwardlinks
 - Force reparse
 
-# backlog
+# backlog 
 - bug on desktop version -> link  
 - bug initial read -> show read 0 files but when run global graph, it still working  
 -> in obsitracker.readallworkspacefiles, use promise.all instead to check for error
@@ -46,9 +47,9 @@ Files -> Obsi -> Neo (graph json)
 + Obsi Data strucutre - representing obsidian file strucutre (use filename as idx) 
 frp = file relative path  
 obsifile = frp + full uri
-- frp -> obsifile
-- frp -> forward links = obsifile[]
-- frp -> backward links = obsifile[]
+- fap -> obsifile
+- fap -> forward links = obsifile[]
+- fap -> backward links = obsifile[]
 
 
 + Parsing neo 

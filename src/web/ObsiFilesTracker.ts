@@ -15,10 +15,10 @@ export type ObsiFile = {
 // };
 
 export class ObsiFilesTracker {
-  files = new Map<string, ObsiFile>(); // exist files only, map path to file
+  // files = new Map<string, ObsiFile>(); // exist files only, map path to file
 
   // may contain links to non-exist files
-  forwardLinks = new Map<ObsiFile, Array<ObsiFile>>();
+  forwardLinks = new Map<string, Array<ObsiFile>>();
   backLinks = new Map<string, Array<ObsiFile>>();
 
   //events
@@ -111,10 +111,8 @@ export class ObsiFilesTracker {
 
     // save to data structure
     const path = uri.path;
-    const file: ObsiFile = { path, fullURI: uri };
-    console.log("Tracking: ", path);
-    this.forwardLinks.set(file, forwardLinks);
-    this.files.set(path, file);
+    this.forwardLinks.set(uri.path, forwardLinks);
+    // this.files.set(path, file);
 
     // TODO: backlinks
     for (let targetFile of forwardLinks) {
@@ -131,14 +129,15 @@ export class ObsiFilesTracker {
       // for every file with this uri (x)  point to file (y)
       // append x as y's backlink
       let backLinks = this.backLinks.get(targetFile.path);
+      const file: ObsiFile = { path, fullURI: uri };
       this.backLinks.set(
         targetFile.path,
         backLinks ? [...backLinks, file] : [file]
       );
 
-      if (!this.files.has(targetFile.path)) {
-        this.files.set(targetFile.path, targetFile);
-      }
+      // if (!this.files.has(targetFile.path)) {
+      //   this.files.set(targetFile.path, targetFile);
+      // }
     }
 
     // fire events
@@ -147,20 +146,16 @@ export class ObsiFilesTracker {
   }
 
   async delete(uri: vscode.Uri) {
-    const path = uri.path;
-
     // delete from forward links and backlinks and files
-    const file = this.files.get(path);
-    let deleted = false;
-    if (file) {
-      this.forwardLinks.delete(file);
-      this.backLinks.delete(file.path);
-      this.files.delete(path);
-      deleted = true;
-    }
+    // const file = this.files.get(path);
+
+    let isFdDel = this.forwardLinks.delete(uri.path);
+    let isBwDel = this.backLinks.delete(uri.path);
+    // this.files.delete(path);
+    // deleted = true;
 
     // delete event
-    deleted && this.onDidDeleteEmitter.fire(uri);
+    (isFdDel || isBwDel) && this.onDidDeleteEmitter.fire(uri);
   }
 
   // filename to 1 full path
