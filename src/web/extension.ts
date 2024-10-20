@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { GraphCreator } from "./GraphCreator";
+import { GraphCreator, GraphOption } from "./GraphCreator";
 import { GraphWebView } from "./webview/GraphWebView";
 import { URIHandler } from "./URIHandler";
 import { ObsiFilesTracker } from "./ObsiFilesTracker";
@@ -24,6 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
     const graphBuilder = new GraphCreator(obsiFilesTracker);
     let globalGraph = graphBuilder.parseNeoGlobal();
     console.log(globalGraph.results[0].data[0].graph);
+    let graphOption: GraphOption = { forwardLinks: true, backwardLinks: true };
 
     // handle events
     obsiFilesTracker.onDidAddEmitter.event(() => {
@@ -44,10 +45,10 @@ export function activate(context: vscode.ExtensionContext) {
         const isMd = textEditor.document.fileName.split(".").pop() === "md";
         if (!isMd) return;
 
-        console.log("URI for local graph: ", textEditor.document.uri);
+        const selectedUri = textEditor.document.uri.path;
 
         // parse local graph
-        const graph = graphBuilder.parseNeoLocal(textEditor.document.uri.path);
+        const graph = graphBuilder.parseNeoLocal(selectedUri);
 
         // render to webview
         const webview = new GraphWebView(context);
@@ -61,6 +62,12 @@ export function activate(context: vscode.ExtensionContext) {
 
               vscode.commands.executeCommand("vscode.open", uri);
             },
+            onGraphOptionChanged: function (graphOption: GraphOption) {
+              webview.graphData = JSON.stringify(
+                graphBuilder.parseNeoLocal(selectedUri, graphOption)
+              );
+              // vscode.commands.executeCommand("vscode.reloadWebviews");
+            },
           });
       }
     );
@@ -72,7 +79,7 @@ export function activate(context: vscode.ExtensionContext) {
         // const graph = graphBuilder.parseNeoGlobal();
 
         // render to webview
-        const webview = new GraphWebView(context);
+        const webview = new GraphWebView(context, graphOption);
         console.log("Global Graph: ", globalGraph.results[0].data[0].graph);
         webview
           .initializeWebView(globalGraph, "Global Graph")
@@ -84,8 +91,11 @@ export function activate(context: vscode.ExtensionContext) {
               if (uri !== undefined)
                 vscode.commands.executeCommand("vscode.open", uri);
             },
-            onGraphOptionChanged: function (graphOption: any) {
-              console.log("Graph Option Changed: ", graphOption);
+            onGraphOptionChanged: function (graphOption: GraphOption) {
+              webview.graphData = JSON.stringify(
+                graphBuilder.parseNeoGlobal(graphOption)
+              );
+              // vscode.commands.executeCommand("vscode.reloadWebviews");
             },
           });
       }

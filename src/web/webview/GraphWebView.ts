@@ -1,12 +1,32 @@
 import * as vscode from "vscode";
+import { GraphCreator, GraphOption } from "../GraphCreator";
+
+export type webviewEventHandlers = {
+  onNodeDoubleClick?: (message: any) => void;
+  onGraphOptionChanged?: (graphOption: GraphOption) => void;
+};
+
 export class GraphWebView {
   context: vscode.ExtensionContext;
   panel: vscode.WebviewPanel | undefined;
+  graphOption: GraphOption;
+  graphData: string = "";
 
-  constructor(context: vscode.ExtensionContext) {
+  constructor(
+    context: vscode.ExtensionContext,
+    graphOption: GraphOption = { forwardLinks: true, backwardLinks: true }
+  ) {
     this.context = context;
+    this.graphOption = graphOption;
   }
 
+  refresh() {
+    if (!this.panel) throw new Error("Panel not initialized");
+
+    const libs = this.loadLibs(this.panel as vscode.WebviewPanel);
+    console.log("graphoption before reload: ", this.graphOption);
+    this.panel.webview.html = this.getGraphWebViewHtml(libs, this.graphData);
+  }
   initializeWebView(_graphData: any, panelName: string) {
     const panel = vscode.window.createWebviewPanel(
       "graphView",
@@ -41,14 +61,21 @@ export class GraphWebView {
     return { neo4jlib, d3lib };
   }
 
-  setNodeListener(onNodeDoubleClick: Function) {
+  setNodeListener(webviewEventHandlers: webviewEventHandlers) {
     if (this.panel === undefined) return;
+
+    const { onNodeDoubleClick, onGraphOptionChanged } = webviewEventHandlers;
 
     this.panel.webview.onDidReceiveMessage(
       (message) => {
         switch (message.command) {
           case "onNodeDoubleClick":
-            onNodeDoubleClick(message);
+            if (onNodeDoubleClick) onNodeDoubleClick(message.node);
+            break;
+          case "onGraphOptionChanged":
+            this.graphOption = message.graphOption;
+            if (onGraphOptionChanged) onGraphOptionChanged(message.graphOption);
+            this.refresh();
             break;
         }
       },
@@ -87,6 +114,42 @@ export class GraphWebView {
     </script> 
     `;
   }
+  generateConfigPanel() {
+    console.log("GraphOption: ", this.graphOption.forwardLinks);
+    return `   
+        <div class="config-panel">
+        <div class="toggle-container">
+            <label for="forwardLinks">Forward Links</label>
+            <input  ${this.graphOption.forwardLinks ? "checked" : ""}
+            type="checkbox" id="forwardLinks" class="toggle">
+        </div>
+        <div class="toggle-container">
+            <label for="backwardLinks">Backward Links</label>
+            <input  ${this.graphOption.backwardLinks ? "checked" : ""}
+            type="checkbox" id="backwardLinks" class="toggle">
+        </div>
+    </div>
+    <script>
+    let graphOption = ${JSON.stringify(this.graphOption) as string};
+    document.getElementById('forwardLinks').addEventListener('change', function() {
+      console.log("forwardlinks from event: ", this.checked);
+      graphOption.forwardLinks = this.checked;
+      vscode.postMessage({
+        command: "onGraphOptionChanged",
+        graphOption,
+      });
+    });
+
+    document.getElementById('backwardLinks').addEventListener('change', function() {
+      graphOption.backwardLinks = this.checked;
+      vscode.postMessage({
+        command: "onGraphOptionChanged",
+        graphOption,
+      });
+    });
+    </script>
+    `;
+  }
 
   getGraphWebViewHtml(
     libs: { neo4jlib: vscode.Uri | string; d3lib: vscode.Uri | string },
@@ -121,6 +184,7 @@ export class GraphWebView {
   <body>
   <div class="container">  
     <h3>Currently supports outgoing links (forward links) only</h3>
+    ${this.generateConfigPanel()}
     <div class="graph"></div> 
   </div>
 

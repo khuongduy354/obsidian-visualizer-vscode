@@ -1,18 +1,13 @@
 # now    
  
-- bug when show backlinks in global, 2 files are not the same =>  duplicate nodes
-- bug when forwardlink points to something not exist, causing global not parse
-5. change to fap for all map, fap -> full uri is needed
-6. graph backlinks toggle GUI
-7. showing files despite not exist (as blurred)
-3. redesign path resolving logics (to fix desktop bugs) and provide better docs
+3. redesign path resolving logics (to fix desktop bugs) and provide better docs 
+(due to not resolve, some files are duplicated)
 4. testing  # especially on links parse   
 
-5. backlinks workspace parse # DONE   
-6. add ignore node_modules for easier testing  
--> solved by testing on different stuffs #DONE  
 ## plans ahead    
-4. better GUI  
+4. better GUI 
+- showing files despite not exist (as blurred)   
+- highlighted when mouse over a node, one color for backlinks, one color for forwards 
 5. Notifications: file read initially,  notify errors  if cant parse one 
 5. search
 6. clear todos

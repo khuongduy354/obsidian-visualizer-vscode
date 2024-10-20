@@ -68,8 +68,11 @@ export class GraphCreator {
     if (startFile === undefined || startFile === null)
       throw new Error("File not exist or tracked, please rerun extension.");
 
-    // TODO: add options
+    let parseFd = true;
+    let parseBw = true;
     if (options !== undefined) {
+      parseFd = options.forwardLinks;
+      parseBw = options.backwardLinks;
     }
 
     // base format
@@ -110,16 +113,18 @@ export class GraphCreator {
       }
 
       // forward link
-      const linkId = startFile.path + forwardFile.path;
-      if (!addedRels.has(linkId)) {
-        result.relationships.push({
-          id: linkId,
-          type: "LINKS_TO",
-          startNode: startFile.path,
-          endNode: forwardFile.path,
-          properties: {},
-        });
-        addedRels.set(linkId, true);
+      if (parseFd) {
+        const linkId = startFile.path + forwardFile.path;
+        if (!addedRels.has(linkId)) {
+          result.relationships.push({
+            id: linkId,
+            type: "LINKS_TO",
+            startNode: startFile.path,
+            endNode: forwardFile.path,
+            properties: {},
+          });
+          addedRels.set(linkId, true);
+        }
       }
     }
 
@@ -142,16 +147,18 @@ export class GraphCreator {
       }
 
       // backlinks
-      const linkId = backFile.path + startFile.path;
-      if (!addedRels.has(linkId)) {
-        result.relationships.push({
-          id: linkId,
-          type: "LINKS_TO",
-          startNode: backFile.path,
-          endNode: startFile.path,
-          properties: {},
-        });
-        addedRels.set(linkId, true);
+      if (parseBw) {
+        const linkId = backFile.path + startFile.path;
+        if (!addedRels.has(linkId)) {
+          result.relationships.push({
+            id: linkId,
+            type: "LINKS_TO",
+            startNode: backFile.path,
+            endNode: startFile.path,
+            properties: {},
+          });
+          addedRels.set(linkId, true);
+        }
       }
     }
 
@@ -173,16 +180,23 @@ export class GraphCreator {
     return final;
   }
 
-  parseNeoGlobal() {
-    const target = this.obsiFilesTracker;
+  parseNeoGlobal(graphOption: GraphOption | undefined = undefined) {
+    // graph option
+    let parseFd = true;
+    let parseBw = true;
+    if (graphOption !== undefined) {
+      parseFd = graphOption.forwardLinks;
+      parseBw = graphOption.backwardLinks;
+    }
 
+    const target = this.obsiFilesTracker;
     let result: any = {
       nodes: [],
       relationships: [],
     };
 
+    // node creation
     for (const [file, forwardFiles] of target.forwardLinks.entries()) {
-      // node creation
       result.nodes.push({
         id: file,
         labels: ["File"],
@@ -206,6 +220,8 @@ export class GraphCreator {
           // target.set(relNode, []);
         }
 
+        // ignore if not parse forward
+        if (!parseFd) continue;
         result.relationships.push({
           id: file + forwardFile.path,
           type: "LINKS_TO",
@@ -214,6 +230,7 @@ export class GraphCreator {
           properties: {},
         });
       }
+      // TODO: add parse backwards here
     }
 
     const final = {
