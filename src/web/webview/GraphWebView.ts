@@ -102,15 +102,6 @@ export class GraphWebView {
     //TODO: offset text outside of the node
     return `
     <script> 
-    const texts = document.getElementsByClassName("text");        
-    for(let i = 0; i < texts.length; i++){
-      let text = texts[i];  
-
-      let filename = text.innerHTML.split("/").pop(); 
-      filename = filename !== undefined ? filename : text.innerHTML;  
-      text.innerHTML = filename  
-
-    } 
     </script> 
     `;
   }
@@ -151,6 +142,66 @@ export class GraphWebView {
     `;
   }
 
+  setStyleScripts() {
+    return ` 
+    <script>  
+    // format texts
+    const texts = document.getElementsByClassName("text");        
+    for(let i = 0; i < texts.length; i++){
+      let text = texts[i];  
+
+      let filename = text.innerHTML.split("/").pop(); 
+      filename = filename !== undefined ? filename : text.innerHTML;  
+      text.innerHTML = filename  
+
+    } 
+
+    const nodeList = document.querySelectorAll(".nodes > .node")  
+
+    for(let _node of nodeList){   
+      // Apply blur on node that not exist    
+      if(_node.__data__.properties.isFileVirtual){  
+        _node.classList.add("blur"); 
+        console.log("NOt exist: ", _node);
+      } 
+
+      // Highlight links of a selected (mouseovered) nodes 
+      _node.addEventListener("mouseover", function(){ 
+        const nodeId = _node.__data__.id;  
+
+        const relList = document.querySelectorAll(".relationships > .relationship");
+        for(let rel of relList){  
+          if(rel.__data__.startNode === nodeId)
+            {rel.classList.add("highlighted");}
+        }
+      });  
+
+      _node.addEventListener("mouseout", function(){ 
+        const nodeId = _node.__data__.id;  
+
+        const relList = document.querySelectorAll(".relationships > .relationship");
+        for(let rel of relList){  
+          if(rel.__data__.startNode === nodeId)
+            {rel.classList.remove("highlighted");}
+        }
+      });
+
+      _node.addEventListener("mouseover", function(){ 
+        const nodeId = _node.__data__.id;  
+
+        const relList = document.querySelectorAll(".relationships > .relationship");
+        for(let rel of relList){  
+          if(rel.__data__.startNode === nodeId)
+            {rel.classList.add("highlighted");}
+        }
+      });
+    }
+
+
+    </script>
+    `;
+  }
+
   getGraphWebViewHtml(
     libs: { neo4jlib: vscode.Uri | string; d3lib: vscode.Uri | string },
     data: string
@@ -172,11 +223,19 @@ export class GraphWebView {
     html, body {
       height: 100%; 
       width: 100%;
-    } 
+    }  
+    .blur{
+      opacity:80%;
+    }
     .text{ 
       margin-top: 100px; 
       background-color: #000000;  
       fill:${this.getTextColor()}
+    } 
+
+    .highlighted{  
+      fill: red;Reseu
+
     }
 
     </style>
@@ -190,7 +249,7 @@ export class GraphWebView {
 
     <script src="${libs.neo4jlib}"></script>
     <script src="${libs.d3lib}"></script> 
-    <script>
+    <script> 
       const vscode = acquireVsCodeApi();
       var neo4jd3 = new Neo4jd3(".graph", {
         highlight: [
@@ -212,8 +271,11 @@ export class GraphWebView {
         },
         infoPanel: false,
         zoomFit: false, 
-      });
-    </script>
+      }); 
+
+
+    </script> 
+    ${this.setStyleScripts()}
     ${this.setTextScript()}
   </body>
 </html>

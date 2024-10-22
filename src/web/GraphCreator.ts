@@ -107,6 +107,9 @@ export class GraphCreator {
           labels: ["File"],
           properties: {
             fileFs: forwardFile.fullURI,
+            isFileVirtual: !this.obsiFilesTracker.forwardLinks.has(
+              forwardFile.path
+            ), // if keyed, file exist
           },
         });
         addedNodes.set(forwardFile, true);
@@ -215,6 +218,7 @@ export class GraphCreator {
             labels: ["File"],
             properties: {
               fileFs: forwardFile.fullURI,
+              isFileVirtual: true,
             },
           });
           // target.set(relNode, []);

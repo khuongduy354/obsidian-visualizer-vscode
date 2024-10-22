@@ -1,8 +1,8 @@
 # now    
  
 4. testing  # especially on links parse   
-4. better GUI 
-- showing files despite not exist (as blurred)   
+4. better GUI  
+- toggle backward links
 - highlighted when mouse over a node, one color for backlinks, one color for forwards 
 5. Notifications: file read initially,  notify errors  if cant parse one 
 
@@ -20,7 +20,9 @@
 - Show local graph forward links + backwardlinks
 - Force reparse 
 - Link resolve
-- GUI toggle forward links
+- GUI 
+    - toggle forward links
+    - showing files despite not exist (as blurred)    DONE 
 
 # backlog 
 - bug on desktop version -> link  
