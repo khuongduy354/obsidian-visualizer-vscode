@@ -99,24 +99,24 @@ export class GraphCreator {
     // if (forwardFiles === undefined || forwardFiles === null)
     //   throw new Error("File not exist or tracked, please rerun extension.");
 
-    for (let forwardFile of forwardFiles) {
-      // node
-      if (!addedNodes.has(forwardFile)) {
-        result.nodes.push({
-          id: forwardFile.path,
-          labels: ["File"],
-          properties: {
-            fileFs: forwardFile.fullURI,
-            isFileVirtual: !this.obsiFilesTracker.forwardLinks.has(
-              forwardFile.path
-            ), // if keyed, file exist
-          },
-        });
-        addedNodes.set(forwardFile, true);
-      }
+    if (parseFd) {
+      for (let forwardFile of forwardFiles) {
+        // node
+        if (!addedNodes.has(forwardFile)) {
+          result.nodes.push({
+            id: forwardFile.path,
+            labels: ["File"],
+            properties: {
+              fileFs: forwardFile.fullURI,
+              isFileVirtual: !this.obsiFilesTracker.forwardLinks.has(
+                forwardFile.path
+              ), // if keyed, file exist
+            },
+          });
+          addedNodes.set(forwardFile, true);
+        }
 
-      // forward link
-      if (parseFd) {
+        // forward link
         const linkId = startFile.path + forwardFile.path;
         if (!addedRels.has(linkId)) {
           result.relationships.push({
@@ -136,21 +136,21 @@ export class GraphCreator {
     console.log("Backlinks of: ", startFile, "is: ", backFiles);
     // if (!Array.isArray(backFiles))
 
-    for (const backFile of backFiles) {
-      // node
-      if (!addedNodes.has(backFile)) {
-        result.nodes.push({
-          id: backFile.path,
-          labels: ["File"],
-          properties: {
-            fileFs: backFile.fullURI,
-          },
-        });
-        addedNodes.set(backFile, true);
-      }
+    if (parseBw) {
+      for (const backFile of backFiles) {
+        // node
+        if (!addedNodes.has(backFile)) {
+          result.nodes.push({
+            id: backFile.path,
+            labels: ["File"],
+            properties: {
+              fileFs: backFile.fullURI,
+            },
+          });
+          addedNodes.set(backFile, true);
+        }
 
-      // backlinks
-      if (parseBw) {
+        // backlinks
         const linkId = backFile.path + startFile.path;
         if (!addedRels.has(linkId)) {
           result.relationships.push({
@@ -198,6 +198,23 @@ export class GraphCreator {
       relationships: [],
     };
 
+    // backlinks
+    if (parseBw) {
+      for (let [file, backFiles] of this.obsiFilesTracker.backLinks.entries()) {
+        for (let backFile of backFiles) {
+          result.relationships.push({
+            id: file + backFile.path,
+            type: "LINKS_TO",
+            startNode: file,
+            endNode: backFile.path,
+            properties: {
+              isBacklink: true,
+            },
+          });
+        }
+      }
+    }
+
     // node creation
     for (const [file, forwardFiles] of target.forwardLinks.entries()) {
       result.nodes.push({
@@ -225,16 +242,16 @@ export class GraphCreator {
         }
 
         // ignore if not parse forward
-        if (!parseFd) continue;
-        result.relationships.push({
-          id: file + forwardFile.path,
-          type: "LINKS_TO",
-          startNode: file,
-          endNode: forwardFile.path,
-          properties: {},
-        });
+        if (parseFd) {
+          result.relationships.push({
+            id: file + forwardFile.path,
+            type: "LINKS_TO",
+            startNode: file,
+            endNode: forwardFile.path,
+            properties: {},
+          });
+        }
       }
-      // TODO: add parse backwards here
     }
 
     const final = {

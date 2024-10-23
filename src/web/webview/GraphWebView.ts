@@ -171,7 +171,7 @@ export class GraphWebView {
 
         const relList = document.querySelectorAll(".relationships > .relationship");
         for(let rel of relList){  
-          if(rel.__data__.startNode === nodeId)
+          if(rel.__data__.startNode === nodeId && !rel.__data__.properties.isBacklink)
             {rel.classList.add("highlighted");}
         }
       });  

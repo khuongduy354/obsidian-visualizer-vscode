@@ -1,14 +1,13 @@
 # now    
  
 4. testing  # especially on links parse   
-4. better GUI  
-- toggle backward links
-- highlighted when mouse over a node, one color for backlinks, one color for forwards 
 5. Notifications: file read initially,  notify errors  if cant parse one 
+5. refractor
 
 ## plans ahead    
 5. search
-6. clear todos
+6. clear todos 
+7. block when parsing is not finish
 
 - Attachments handling
 - Included, Excluded folders, Attachment folders   
@@ -19,10 +18,11 @@
 - Show global graph 
 - Show local graph forward links + backwardlinks
 - Force reparse 
-- Link resolve
+- Link resolve given a filename
 - GUI 
+    - highlighted when mouse over a node 
     - toggle forward links
-    - showing files despite not exist (as blurred)    DONE 
+    - showing files despite not exist (as blurred)    
 
 # backlog 
 - bug on desktop version -> link  
