@@ -95,13 +95,6 @@ export class GraphWebView {
         return "#808080";
     }
   }
-  setTextScript() {
-    //TODO: offset text outside of the node
-    return `
-    <script> 
-    </script> 
-    `;
-  }
   generateConfigPanel() {
     console.log("GraphOption: ", this.graphOption.forwardLinks);
     return `   
@@ -273,7 +266,6 @@ export class GraphWebView {
 
     </script> 
     ${this.setStyleScripts()}
-    ${this.setTextScript()}
   </body>
 </html>
   `;

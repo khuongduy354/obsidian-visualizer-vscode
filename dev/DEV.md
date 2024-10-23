@@ -1,20 +1,20 @@
 # now    
  
-5. refractor
 4. testing  # especially on links parse   
 5. Notifications: file read initially,  notify errors  if cant parse one 
 5. Setting panels 
 - Search
     - grep
     - filename/path 
-- Exist file only   
-4. Attachments handling
+- Exist file only    
+4. Attachments handling 
+-> parse it back (currently ignore ![[...]]) 
+-> fix link resolver (move it out of extractForwardLinks)
 
 
 ## plans ahead     
-6. clear todos 
 7. block when parsing is not finish 
-6. test events
+6. test events 
 
 - Included, Excluded folders, Attachment folders   
 -> Exclude is a bug in vscode, which works in desktop but not in browser...

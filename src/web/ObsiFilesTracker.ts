@@ -49,8 +49,6 @@ export class ObsiFilesTracker extends vscode.Disposable {
   }
 
   async extractForwardLinks(content: string) {
-    // TODO: ignore ![[...]]
-
     const linkRegex = /(?<!\!)\[\[(.*?)\]\]/g;
     let forwardLinks = await Promise.all(
       [...content.matchAll(linkRegex)].map(async (forwardLink) => {
@@ -153,12 +151,12 @@ export class ObsiFilesTracker extends vscode.Disposable {
     this.forwardLinks.set(uri.path, forwardLinks);
     // this.files.set(path, file);
 
-    // TODO: backlinks
     for (let targetFile of forwardLinks) {
       if (!targetFile.path.startsWith("/")) {
-        // TODO: resolve file name or relative path here;
+        // path must be resolved in extractForwardLinks, must start with /
         continue;
       }
+
       let fullURI = this.uriHandler.getFullURI(targetFile.path);
       targetFile = {
         path: targetFile.path,

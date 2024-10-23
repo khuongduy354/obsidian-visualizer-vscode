@@ -17,7 +17,7 @@ export class GraphCreator {
     this.uriHandler = uriHandler;
     this.obsiFilesTracker = obsiFilesTracker;
 
-    // TODO: i think these can be parse at runtime for more accuracy
+    // i think these can be parse at runtime for more accuracy
     // this.disposables.push(
     //   this.obsiFilesTracker.onDidAddEmitter.event(this.parseNeoGlobal),
     //   this.obsiFilesTracker.onDidDeleteEmitter.event(this.parseNeoGlobal),
@@ -197,7 +197,7 @@ export class GraphCreator {
 
       // forward links
       for (let forwardFile of forwardFiles) {
-        // TODO: this make sure that relation to non-exist files must point to a node
+        // this make sure that relation to non-exist files must point to a node
         // file not exist check
         if (!target.forwardLinks.has(forwardFile.path)) {
           result.nodes.push({
