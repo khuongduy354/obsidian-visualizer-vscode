@@ -1,10 +1,7 @@
 import * as vscode from "vscode";
-import { GraphCreator, GraphOption } from "../GraphCreator";
-
-export type webviewEventHandlers = {
-  onNodeDoubleClick?: (message: any) => void;
-  onGraphOptionChanged?: (graphOption: GraphOption) => void;
-};
+import { GraphCreator } from "../GraphCreator";
+import { WebviewEventHandlers } from "../types/WebViewEventHandlers";
+import { GraphOption } from "../types/GraphOption";
 
 export class GraphWebView {
   context: vscode.ExtensionContext;
@@ -61,7 +58,7 @@ export class GraphWebView {
     return { neo4jlib, d3lib };
   }
 
-  setNodeListener(webviewEventHandlers: webviewEventHandlers) {
+  setNodeListener(webviewEventHandlers: WebviewEventHandlers) {
     if (this.panel === undefined) return;
 
     const { onNodeDoubleClick, onGraphOptionChanged } = webviewEventHandlers;

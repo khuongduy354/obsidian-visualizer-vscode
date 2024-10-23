@@ -1,25 +1,14 @@
 import * as vscode from "vscode";
 import { URIHandler } from "./URIHandler";
 import { ObsiFile, ObsiFilesTracker } from "./ObsiFilesTracker";
-
-export type GraphOption = {
-  forwardLinks: boolean;
-  backwardLinks: boolean;
-  // attachments: boolean;
-};
+import { GraphOption } from "./types/GraphOption";
 
 export class GraphCreator {
-  // localGraph: Map<string, Array<string>> = new Map();
-  // localBacklinks: Map<string, Array<string>> = new Map();
-  // globalNeoFormat: any = null;
-  // localNeoFormat: any = null;
-  // globalGraph: Map<string, Array<string>> = new Map();
-  // mdList: string[] = [];
   uriHandler: URIHandler;
   obsiFilesTracker: ObsiFilesTracker;
 
   onDidUpdateEmitter = new vscode.EventEmitter<void>();
-  disposables: vscode.Disposable[] = [this.onDidUpdateEmitter];
+  // disposables: vscode.Disposable[] = [this.onDidUpdateEmitter];
 
   constructor(
     obsiFilesTracker: ObsiFilesTracker,
@@ -35,25 +24,6 @@ export class GraphCreator {
     //   this.obsiFilesTracker.onDidUpdateEmitter.event(this.parseNeoGlobal)
     // );
   }
-
-  // async readDirRecursively(start: string, currentParent: string) {
-  //   // let path = currentParent + start + "/";
-  //   let filePath = URIHandler.joinPath(currentParent, start);
-
-  //   let entries = await vscode.workspace.fs.readDirectory(
-  //     this.getFullUri(filePath)
-  //   );
-
-  //   for (let entry of entries) {
-  //     if (entry[1] === 1) {
-  //       const isMd = entry[0].split(".").pop() === "md";
-  //       if (isMd) this.mdList.push(URIHandler.joinPath(filePath, entry[0]));
-  //     }
-  //     if (entry[1] === 2) {
-  //       await this.readDirRecursively(entry[0], filePath);
-  //     }
-  //   }
-  // }
 
   getFullUri(path: string, isRel = true) {
     return this.uriHandler.getFullURI(path, isRel);
@@ -273,8 +243,8 @@ export class GraphCreator {
     // see sample format in helper/sampleNeo4j.js
   }
 
-  dispose() {
-    this.disposables.forEach((d) => d.dispose());
-    this.disposables = [];
-  }
+  // dispose() {
+  //   this.disposables.forEach((d) => d.dispose());
+  //   this.disposables = [];
+  // }
 }

@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 import { ObsiFilesTracker } from "./ObsiFilesTracker";
-export type ObsiEvents = {};
 
 export function setWatcher(workspace: ObsiFilesTracker) {
   const watcher = vscode.workspace.createFileSystemWatcher("**/*");

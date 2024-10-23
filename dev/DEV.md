@@ -1,17 +1,28 @@
 # now    
  
+5. refractor
 4. testing  # especially on links parse   
 5. Notifications: file read initially,  notify errors  if cant parse one 
-5. refractor
+5. Setting panels 
+- Search
+    - grep
+    - filename/path 
+- Exist file only   
+4. Attachments handling
 
-## plans ahead    
-5. search
+
+## plans ahead     
 6. clear todos 
-7. block when parsing is not finish
+7. block when parsing is not finish 
+6. test events
 
-- Attachments handling
 - Included, Excluded folders, Attachment folders   
 -> Exclude is a bug in vscode, which works in desktop but not in browser...
+7. tiny stuffs 
+- text below 
+- bolder/bigger with more connections 
+- orphans toggle setting
+8. tagging 
 
 # Working features  
 ### on web only 

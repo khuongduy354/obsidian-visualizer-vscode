@@ -1,4 +1,3 @@
-import { Resolver } from "./Resolver";
 import { URIHandler } from "./URIHandler";
 import * as vscode from "vscode";
 
@@ -10,16 +9,10 @@ export type ObsiFile = {
   fullURI: vscode.Uri;
 };
 
-// type Link = {
-//   from: File;
-//   to: File;
-// };
-
-export class ObsiFilesTracker {
-  // files = new Map<string, ObsiFile>(); // exist files only, map path to file
+export class ObsiFilesTracker extends vscode.Disposable {
+  forwardLinks = new Map<string, Array<ObsiFile>>();
 
   // may contain links to non-exist files
-  forwardLinks = new Map<string, Array<ObsiFile>>();
   backLinks = new Map<string, Array<ObsiFile>>();
 
   //events
@@ -30,12 +23,29 @@ export class ObsiFilesTracker {
   // filename to files with full path
   fileNameFullPathMap = new Map<string, Set<string>>();
   uriHandler: URIHandler;
-  resolver: Resolver = new Resolver(this);
 
   constructor(uriHandler = new URIHandler()) {
+    super(() => {});
     this.uriHandler = uriHandler;
 
     // setup watcher
+  }
+  async resolveFile(filename: string): Promise<string> {
+    // /filename (absolute path)
+    if (filename.startsWith("/")) return filename;
+
+    // filename
+    // 1. get from cached
+    // default as first one because that's how resolve work if you don't specify;
+    let filePaths = this.fileNameFullPathMap.get(filename);
+    console.log("Resolving: ", filename, filePaths);
+    if (filePaths && filePaths.size > 0) return filePaths.values().next().value;
+
+    // // 2. TODO: regex from workspaces
+    // const pattern = `(\\b${filename}\\b)`;
+    // const files = await vscode.workspace.findFiles(pattern);
+
+    return "";
   }
 
   async extractForwardLinks(content: string) {
@@ -44,7 +54,7 @@ export class ObsiFilesTracker {
     const linkRegex = /(?<!\!)\[\[(.*?)\]\]/g;
     let forwardLinks = await Promise.all(
       [...content.matchAll(linkRegex)].map(async (forwardLink) => {
-        const fullPath = await this.resolver.resolveFile(forwardLink[1]);
+        const fullPath = await this.resolveFile(forwardLink[1]);
         let uri: vscode.Uri | undefined;
 
         uri = this.uriHandler.getFullURI(fullPath);
@@ -185,21 +195,6 @@ export class ObsiFilesTracker {
 
     // delete event
     (isFdDel || isBwDel) && this.onDidDeleteEmitter.fire(uri);
-  }
-
-  isAbs(path: string) {
-    if (path.includes("/")) {
-      // 1/2 vs folder/note
-
-      //TODO: try attach to root & open  => failed ? absolute (true) : relative (false)
-
-      return true;
-    }
-    return false;
-  }
-  getFullPath(fileName: string) {
-    const fullPath = this.fileNameFullPathMap.get(fileName);
-    return !!fullPath ? fullPath : "";
   }
 
   dispose() {
