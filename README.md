@@ -2,6 +2,7 @@
  
 Providing core obsidian features in VSCode: graphs, backlinks,...
 
+VSCode marketplace: [Obsidian Visualizer](https://marketplace.visualstudio.com/items?itemName=khuongduy354.obsidian-visualizer)
 
 ## Features 
 
