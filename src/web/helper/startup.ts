@@ -2,9 +2,10 @@ import { URIHandler } from "../URIHandler";
 import { ObsiFilesTracker } from "../ObsiFilesTracker";
 import { setWatcher } from "../VSCodeWatcher";
 import { GraphCreator } from "../GraphCreator";
-import { GraphOption } from "../GraphCreator";
+import { GraphOption } from "../types/GraphOption";
 import * as vscode from "vscode";
-import { AppContext } from "../types/AppContext";
+// import { AppContext } from "../types/AppContext";
+import { AppContext } from "../AppContext";
 
 export function startup(): AppContext {
   // initial run
@@ -12,21 +13,35 @@ export function startup(): AppContext {
   const obsiFilesTracker = new ObsiFilesTracker();
   const watcher = setWatcher(obsiFilesTracker);
 
+  // init graph builder
+  const graphBuilder = new GraphCreator(obsiFilesTracker);
+  let globalGraph = graphBuilder.simplifiedToFullGraph({
+    nodes: [],
+    relationships: [],
+  });
+  let graphOption: GraphOption = { forwardLinks: true, backwardLinks: true };
+
+  // creates appContext
+  const appContext = new AppContext(
+    graphBuilder,
+    uriHandler,
+    globalGraph,
+    graphOption,
+    watcher,
+    obsiFilesTracker
+  );
+
   // init workspace scan
   obsiFilesTracker
     .readAllWorkspaceFiles()
     .then(() => {
       vscode.window.showInformationMessage("Files read ");
+      appContext.globalGraph = graphBuilder.parseNeoGlobal();
+      console.log("Finished parsing global graph", globalGraph);
     })
     .catch((err) => {
       console.error("FILE READ ERR: ", err);
     });
-
-  // init global graph parse
-  const graphBuilder = new GraphCreator(obsiFilesTracker);
-  let globalGraph = graphBuilder.parseNeoGlobal();
-  console.log(globalGraph.results[0].data[0].graph);
-  let graphOption: GraphOption = { forwardLinks: true, backwardLinks: true };
 
   // handle events
   obsiFilesTracker.onDidAddEmitter.event(() => {
@@ -38,12 +53,5 @@ export function startup(): AppContext {
   obsiFilesTracker.onDidUpdateEmitter.event(() => {
     globalGraph = graphBuilder.parseNeoGlobal();
   });
-  return {
-    obsiFilesTracker,
-    watcher,
-    graphBuilder,
-    globalGraph,
-    graphOption,
-    uriHandler,
-  };
+  return appContext;
 }
