@@ -1,3 +1,20 @@
+// Sample data format for Neo4j to receive
+const final = {
+  results: [
+    {
+      columns: ["File"],
+      data: [
+        {
+          graph: {
+            ...sample,
+          },
+        },
+      ],
+    },
+  ],
+};
+
+// simplified with only nodes and relationships
 const sample = {
   nodes: [
     {
