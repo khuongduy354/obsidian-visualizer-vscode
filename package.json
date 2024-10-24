@@ -3,7 +3,7 @@
   "displayName": "Obsidian Visualizer",
   "description": "Obsidian graphs, backlinks,... visualization by opening vault in VSCode",
   "icon": "images/demo_dark.png",
-  "version": "0.1.5",
+  "version": "1.0.0-beta",
   "publisher": "khuongduy354",
   "repository": {
     "url": "https://github.com/khuongduy354/obsidian-visualizer-vscode"
@@ -31,10 +31,6 @@
       {
         "command": "obsidian-visualizer.showGlobalGraph",
         "title": "Obsidian Visualizer: Global Graph"
-      },
-      {
-        "command": "obsidian-visualizer.detectBacklinks",
-        "title": "Obsidian Visualizer: Backlinks"
       },
       {
         "command": "obsidian-visualizer.forceWorkspaceParse",
