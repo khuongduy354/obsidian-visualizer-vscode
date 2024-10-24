@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { URIHandler } from "./URIHandler";
 import { ObsiFile, ObsiFilesTracker } from "./ObsiFilesTracker";
 import { GraphOption } from "./types/GraphOption";
+import { FullNeo4jFormat, SimplifiedNeo4jFormat } from "./types/Neo4j";
 
 export class GraphCreator {
   uriHandler: URIHandler;
@@ -32,7 +33,7 @@ export class GraphCreator {
   parseNeoLocal(
     localPath: string,
     options: GraphOption | undefined = undefined
-  ) {
+  ): FullNeo4jFormat {
     const startFile = this.uriHandler.getFullURI(localPath);
 
     if (startFile === undefined || startFile === null)
@@ -46,7 +47,7 @@ export class GraphCreator {
     }
 
     // base format
-    let result: any = {
+    let result: SimplifiedNeo4jFormat = {
       nodes: [
         {
           id: startFile.path,
@@ -135,25 +136,74 @@ export class GraphCreator {
       }
     }
 
-    const final = {
+    return this.simplifiedToFullGraph(result);
+  }
+
+  applySearchFilter(
+    fullGraph: FullNeo4jFormat,
+    searchFilter: string
+  ): FullNeo4jFormat {
+    let keyword = "";
+    let searchMode: "filename" | "path" = "filename";
+    searchFilter = searchFilter.trim();
+    if (searchFilter === "") return fullGraph; // no search filter (empty string
+
+    // extract keyword, searchMode
+    if (searchFilter.startsWith("filename:")) {
+      keyword = searchFilter.split("filename:")[1];
+      searchMode = "filename";
+    } else if (searchFilter.startsWith("path:")) {
+      keyword = searchFilter.split("path:")[1];
+      searchMode = "path";
+    } else {
+      keyword = searchFilter;
+      searchMode = "filename";
+    }
+
+    // apply search
+    let graph = fullGraph.results[0].data[0].graph;
+    let newNodes = [];
+    let newRel = [];
+
+    for (let node of graph.nodes) {
+      let searchTarget =
+        searchMode === "filename"
+          ? this.obsiFilesTracker.extractFileName(node.id)
+          : node.id;
+      if (searchTarget.includes(keyword)) {
+        newNodes.push({ ...node });
+        for (let rel of graph.relationships) {
+          if (rel.startNode === node.id || rel.endNode === node.id) {
+            newRel.push({ ...rel });
+          }
+        }
+      }
+    }
+
+    return this.simplifiedToFullGraph({
+      nodes: newNodes,
+      relationships: newRel,
+    });
+  }
+  simplifiedToFullGraph(graph: SimplifiedNeo4jFormat): FullNeo4jFormat {
+    const newGraph = {
       results: [
         {
           columns: ["File"],
           data: [
             {
-              graph: {
-                ...result,
-              },
+              graph: { ...graph }, // it's a deep copy
             },
           ],
         },
       ],
     };
-
-    return final;
+    return newGraph;
   }
 
-  parseNeoGlobal(graphOption: GraphOption | undefined = undefined) {
+  parseNeoGlobal(
+    graphOption: GraphOption | undefined = undefined
+  ): FullNeo4jFormat {
     // graph option
     let parseFd = true;
     let parseBw = true;
@@ -224,22 +274,7 @@ export class GraphCreator {
       }
     }
 
-    const final = {
-      results: [
-        {
-          columns: ["File"],
-          data: [
-            {
-              graph: {
-                ...result,
-              },
-            },
-          ],
-        },
-      ],
-    };
-
-    return final;
+    return this.simplifiedToFullGraph(result);
     // see sample format in helper/sampleNeo4j.js
   }
 

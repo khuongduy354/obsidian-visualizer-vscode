@@ -1,15 +1,15 @@
 import * as vscode from "vscode";
-import { AppContext } from "./types/AppContext";
+// import { AppContext } from "./types/AppContext";
 import { Commands } from "./types/Commands";
 import { GraphWebView } from "./webview/GraphWebView";
 import { GraphOption } from "./types/GraphOption";
+import { AppContext } from "./AppContext";
 
 export function setupCommands(
   appContext: AppContext,
   context: vscode.ExtensionContext
 ): Commands {
-  let { graphBuilder, globalGraph, uriHandler, obsiFilesTracker, graphOption } =
-    appContext;
+  let { graphBuilder, uriHandler, obsiFilesTracker, graphOption } = appContext;
 
   const showLocalGraphCommand = vscode.commands.registerTextEditorCommand(
     "obsidian-visualizer.showLocalGraph",
@@ -53,9 +53,12 @@ export function setupCommands(
 
       // render to webview
       const webview = new GraphWebView(context, graphOption);
-      console.log("Global Graph: ", globalGraph.results[0].data[0].graph);
+      console.log(
+        "Global Graph: ",
+        appContext.globalGraph.results[0].data[0].graph
+      );
       webview
-        .initializeWebView(globalGraph, "Global Graph")
+        .initializeWebView(appContext.globalGraph, "Global Graph")
         // node onDoubleClick listener
         .setNodeListener({
           onNodeDoubleClick: function (node: any) {
@@ -70,6 +73,14 @@ export function setupCommands(
             );
             // vscode.commands.executeCommand("vscode.reloadWebviews");
           },
+          onSearchChanged: function (searchFilter: string) {
+            let filteredGraph = graphBuilder.applySearchFilter(
+              appContext.globalGraph,
+              searchFilter
+            );
+            webview.graphData = JSON.stringify(filteredGraph);
+            webview.refresh();
+          },
         });
     }
   );
@@ -82,7 +93,7 @@ export function setupCommands(
         .then(() => {
           vscode.window.showInformationMessage("Files read ");
 
-          globalGraph = graphBuilder.parseNeoGlobal();
+          appContext.globalGraph = graphBuilder.parseNeoGlobal();
         })
         .catch((err) => {
           console.error("FILE READ ERR: ", err);

@@ -61,7 +61,8 @@ export class GraphWebView {
   setNodeListener(webviewEventHandlers: WebviewEventHandlers) {
     if (this.panel === undefined) return;
 
-    const { onNodeDoubleClick, onGraphOptionChanged } = webviewEventHandlers;
+    const { onNodeDoubleClick, onGraphOptionChanged, onSearchChanged } =
+      webviewEventHandlers;
 
     this.panel.webview.onDidReceiveMessage(
       (message) => {
@@ -73,6 +74,13 @@ export class GraphWebView {
             this.graphOption = message.graphOption;
             if (onGraphOptionChanged) onGraphOptionChanged(message.graphOption);
             this.refresh();
+            break;
+          case "onSearchChange":
+            console.log("Search: ", message.searchFilter);
+            if (onSearchChanged) onSearchChanged(message.searchFilter);
+            break;
+          default:
+            console.error("Unknown command: ", message.command);
             break;
         }
       },
@@ -108,8 +116,11 @@ export class GraphWebView {
             <label for="backwardLinks">Backward Links</label>
             <input  ${this.graphOption.backwardLinks ? "checked" : ""}
             type="checkbox" id="backwardLinks" class="toggle">
+        </div> 
+        <div class="search-container">
+            <label for="search">Search</label>
+            <input type="text" id="search" class="search">
         </div>
-    </div>
     <script>
     let graphOption = ${JSON.stringify(this.graphOption) as string};
     document.getElementById('forwardLinks').addEventListener('change', function() {
@@ -126,6 +137,16 @@ export class GraphWebView {
       vscode.postMessage({
         command: "onGraphOptionChanged",
         graphOption,
+      });
+    });
+
+
+    // SEARCH 
+    document.getElementById('search').addEventListener('asdaschange', function() { 
+      console.log("Searching  ", this.value);
+      vscode.postMessage({
+        command: "onSearchChange",
+        searchFilter: this.value,
       });
     });
     </script>
