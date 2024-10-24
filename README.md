@@ -38,7 +38,7 @@ Press F5 or  Command Pallete >Debug: Start Debugging
 
 ## Release Notes 
 
-### 1.0.0-beta
+### 1.0.0
 
 - Initial release of obsidian visualizer
 - Local & Global graph rendering.
