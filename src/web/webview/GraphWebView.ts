@@ -8,6 +8,10 @@ export class GraphWebView {
   panel: vscode.WebviewPanel | undefined;
   graphOption: GraphOption;
   graphData: string = "";
+  states = {
+    searchInput: "",
+    searchCursorPos: 0,
+  };
 
   constructor(
     context: vscode.ExtensionContext,
@@ -76,8 +80,11 @@ export class GraphWebView {
             this.refresh();
             break;
           case "onSearchChange":
+            this.states.searchInput = message.searchFilter;
+            this.states.searchCursorPos = message.cursorPos;
             console.log("Search: ", message.searchFilter);
             if (onSearchChanged) onSearchChanged(message.searchFilter);
+            this.refresh();
             break;
           default:
             console.error("Unknown command: ", message.command);
@@ -119,8 +126,12 @@ export class GraphWebView {
         </div> 
         <div class="search-container">
             <label for="search">Search</label>
-            <input type="text" id="search" class="search">
+            <input autofocus value="${
+              this.states.searchInput
+            }" type="text" id="search" class="search">
         </div>
+        </div>
+
     <script>
     let graphOption = ${JSON.stringify(this.graphOption) as string};
     document.getElementById('forwardLinks').addEventListener('change', function() {
@@ -142,13 +153,25 @@ export class GraphWebView {
 
 
     // SEARCH 
-    document.getElementById('search').addEventListener('asdaschange', function() { 
-      console.log("Searching  ", this.value);
+    document.getElementById('search').addEventListener('input', function() { 
       vscode.postMessage({
         command: "onSearchChange",
         searchFilter: this.value,
+        cursorPos: this.selectionStart,
       });
     });
+
+  // autofocus
+       window.onload = function() {
+      setTimeout(function() {
+          let that = document.getElementById("search")
+          that.focus();
+          // at end
+          setTimeout(function(){ that.selectionStart = that.selectionEnd = ${
+            this.states.searchCursorPos
+          }; }, 0);
+      }, 0);
+   };
     </script>
     `;
   }

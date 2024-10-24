@@ -41,6 +41,13 @@ export function setupCommands(
             );
             // vscode.commands.executeCommand("vscode.reloadWebviews");
           },
+          // onSearchChanged: function (searchFilter: string) {
+          //   let filteredGraph = graphBuilder.applySearchFilter(
+          //     appContext.globalGraph,
+          //     searchFilter
+          //   );
+          //   webview.graphData = JSON.stringify(filteredGraph);
+          // },
         });
     }
   );
@@ -79,7 +86,6 @@ export function setupCommands(
               searchFilter
             );
             webview.graphData = JSON.stringify(filteredGraph);
-            webview.refresh();
           },
         });
     }

@@ -1,28 +1,28 @@
 # now    
  
+7. block when parsing is not finish 
 4. testing  # especially on links parse   
-5. Notifications: file read initially,  notify errors  if cant parse one 
-5. Setting panels 
-- Search
-    - grep
-    - filename/path 
-- Exist file only    
+
+
+6. test events 
+5. Notfications: file read initially,  notify errors  if cant parse one 
 4. Attachments handling 
 -> parse it back (currently ignore ![[...]]) 
 -> fix link resolver (move it out of extractForwardLinks)
 
+4. check why desktop isn't working
 
-## plans ahead     
-7. block when parsing is not finish 
-6. test events 
+## plans ahead      
+3. Search text in workspaces: grep is not supported in vscode api (stably)
 
 - Included, Excluded folders, Attachment folders   
 -> Exclude is a bug in vscode, which works in desktop but not in browser...
 7. tiny stuffs 
 - text below 
 - bolder/bigger with more connections 
-- orphans toggle setting
+- orphans toggle setting 
 8. tagging 
+3. embed text from link
 
 # Working features  
 ### on web only 
@@ -34,6 +34,10 @@
     - highlighted when mouse over a node 
     - toggle forward links
     - showing files despite not exist (as blurred)    
+- Search (global graph only)
+    - filename: shows nodes + its back/forward links where filename.contains("keyword") 
+    - path: shows nodes + its back/forward links where path.contains("keyword")  
+    - default: filename    
 
 # backlog 
 - bug on desktop version -> link  
