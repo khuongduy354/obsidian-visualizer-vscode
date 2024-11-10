@@ -74,3 +74,41 @@ obsifile = frp + full uri
 + cross-Platform 
 to read files, different plats have different uris, so added a URihandler class to detect workspace uri, any later uri is based on that. 
 graph class only works on filepath, independent of uri 
+ 
+
++ FORMATS  
+**web**
+folder.uri.path = "/"  # read from root
+folderUri = uriHandler.getFullURI(folder.uri.path)
+result: {
+    "$mid": 1,
+    "fsPath": "/",
+    "external": "vscode-test-web://mount/",
+    "path": "/",
+    "scheme": "vscode-test-web",
+    "authority": "mount"
+}  
+
+baseWorkspaceURI = 
+{
+    "$mid": 1,
+    "fsPath": "/",
+    "external": "vscode-test-web://mount/",
+    "path": "/",
+    "scheme": "vscode-test-web",
+    "authority": "mount"
+} 
+
+--> Web every file object is just relative path, so an append to base path is needed (relative = true in uriHandler)
+
+**desktop**
+folder.uri.path = "/some/absolute/path"  # read from root, desktop has extra components compared to web 
+
+{$mid: 1, path: '/home/khuongduy354/assets/obsidian-git-notes/home/khuongduy354/assets/obsidian-git-notes', scheme: 'file'}
+
+
+baseWorkspaceURI 
+{$mid: 1, fsPath: '/home/khuongduy354/assets/obsidian-git-notes', external: 'file:///home/khuongduy354/assets/obsidian-git-notes', path: '/home/khuongduy354/assets/obsidian-git-notes', scheme: 'file'}
+
+--> Desktop every file object includes absolute path, so relative must be disable in uriHandler or else that base absolute path will be duplicated 
+

@@ -30,6 +30,12 @@ export class ObsiFilesTracker extends vscode.Disposable {
 
     // setup watcher
   }
+
+  displayWorkspace() {
+    console.log("Forward Links: ", this.forwardLinks);
+    console.log("Back Links: ", this.backLinks);
+    console.log("File Name Full Path Map: ", this.fileNameFullPathMap);
+  }
   async resolveFile(filename: string): Promise<string> {
     // /filename (absolute path)
     if (filename.startsWith("/")) return filename;
@@ -38,7 +44,6 @@ export class ObsiFilesTracker extends vscode.Disposable {
     // 1. get from cached
     // default as first one because that's how resolve work if you don't specify;
     let filePaths = this.fileNameFullPathMap.get(filename);
-    console.log("Resolving: ", filename, filePaths);
     if (filePaths && filePaths.size > 0) return filePaths.values().next().value;
 
     // // 2. TODO: regex from workspaces
@@ -95,6 +100,7 @@ export class ObsiFilesTracker extends vscode.Disposable {
     let uris: vscode.Uri[] = [];
     for (const folder of vscode.workspace.workspaceFolders) {
       const folderUri = this.uriHandler.getFullURI(folder.uri.path);
+
       const pattern = new vscode.RelativePattern(folderUri, "**/*.md");
 
       // const excludePattern = new vscode.RelativePattern(
@@ -107,6 +113,7 @@ export class ObsiFilesTracker extends vscode.Disposable {
 
       uris.push(...currUris);
     }
+    console.log("URIS found readALlWorkspaceFiles: ", uris);
 
     // first row track files only
     for (let uri of uris) {
@@ -118,9 +125,6 @@ export class ObsiFilesTracker extends vscode.Disposable {
       } else {
         this.fileNameFullPathMap.set(filename, new Set([uri.path]));
       }
-      console.log("adding file: ", filename, ",paths: ", [
-        ...(this.fileNameFullPathMap.get(filename) as Set<string>),
-      ]);
     }
 
     // second row: scan and parse in to graphs

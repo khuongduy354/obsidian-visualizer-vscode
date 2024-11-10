@@ -15,19 +15,19 @@ export class URIHandler {
     }
   }
 
-  // get full uri from a relative path of current workspace
+  // get full uri from a of current workspace
   getFullURI(path: string, isRelative = true) {
     const baseScheme = this.baseWorkspaceURI.scheme;
 
     let uri = this.baseWorkspaceURI.with({ path: path });
 
-    if (isRelative) {
-      uri = vscode.Uri.joinPath(this.baseWorkspaceURI, path);
-    }
-
-    //if on desktop
+    //if on desktop (desktop don't use relative path)
     if (baseScheme === "file") {
       return uri;
+    }
+
+    if (isRelative) {
+      uri = vscode.Uri.joinPath(this.baseWorkspaceURI, path);
     }
 
     // if online

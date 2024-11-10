@@ -35,7 +35,8 @@ export function startup(): AppContext {
   obsiFilesTracker
     .readAllWorkspaceFiles()
     .then(() => {
-      vscode.window.showInformationMessage("Files read ");
+      console.log("Finished reading all workspace files");
+      obsiFilesTracker.displayWorkspace();
       appContext.globalGraph = graphBuilder.parseNeoGlobal();
       console.log("Finished parsing global graph", globalGraph);
     })

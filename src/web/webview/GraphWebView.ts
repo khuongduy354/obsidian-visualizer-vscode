@@ -25,7 +25,6 @@ export class GraphWebView {
     if (!this.panel) throw new Error("Panel not initialized");
 
     const libs = this.loadLibs(this.panel as vscode.WebviewPanel);
-    console.log("graphoption before reload: ", this.graphOption);
     this.panel.webview.html = this.getGraphWebViewHtml(libs, this.graphData);
   }
   initializeWebView(_graphData: any, panelName: string) {
@@ -82,7 +81,6 @@ export class GraphWebView {
           case "onSearchChange":
             this.states.searchInput = message.searchFilter;
             this.states.searchCursorPos = message.cursorPos;
-            console.log("Search: ", message.searchFilter);
             if (onSearchChanged) onSearchChanged(message.searchFilter);
             this.refresh();
             break;
@@ -111,7 +109,6 @@ export class GraphWebView {
     }
   }
   generateConfigPanel() {
-    console.log("GraphOption: ", this.graphOption.forwardLinks);
     return `   
         <div class="config-panel">
         <div class="toggle-container">
@@ -135,7 +132,6 @@ export class GraphWebView {
     <script>
     let graphOption = ${JSON.stringify(this.graphOption) as string};
     document.getElementById('forwardLinks').addEventListener('change', function() {
-      console.log("forwardlinks from event: ", this.checked);
       graphOption.forwardLinks = this.checked;
       vscode.postMessage({
         command: "onGraphOptionChanged",
@@ -196,7 +192,6 @@ export class GraphWebView {
       // Apply blur on node that not exist    
       if(_node.__data__.properties.isFileVirtual){  
         _node.classList.add("blur"); 
-        console.log("NOt exist: ", _node);
       } 
 
       // Highlight links of a selected (mouseovered) nodes 
