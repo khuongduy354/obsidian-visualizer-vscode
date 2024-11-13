@@ -1,16 +1,27 @@
-# now    
+# now      
+
+- events in web(production) not worked: probably due to web 
+- delete events untested
+
+- lag when large connected node
+-> connection force too strong 
+
+
+- events in Desktop worked: 
+-> add auto rerendering graph webview 
+
+
+
  
-7. block when parsing is not finish 
 4. testing  # especially on links parse   
 
 
-6. test events 
 5. Notfications: file read initially,  notify errors  if cant parse one 
 4. Attachments handling 
 -> parse it back (currently ignore ![[...]]) 
 -> fix link resolver (move it out of extractForwardLinks)
 
-4. check why desktop isn't working
+
 
 ## plans ahead      
 3. Search text in workspaces: grep is not supported in vscode api (stably)
@@ -57,11 +68,11 @@ Files -> Obsi -> Neo (graph json)
 - if 2 file same name (different path), then pick 1 by default (that's how obsidian handle), apply for both backlinks and forwardlinks
 
 + Obsi Data strucutre - representing obsidian file strucutre (use filename as idx) 
-frp = file relative path  
-obsifile = frp + full uri
+fap = file absolute path, contains path starting from root workspace   (start with /)
+obsifile = fap + full uri
 - fap -> obsifile
-- fap -> forward links = obsifile[]
-- fap -> backward links = obsifile[]
+- fap -> forward links (obsifile[])
+- fap -> backward links (obsifile[])
 
 
 + Parsing neo 
@@ -69,6 +80,10 @@ obsifile = frp + full uri
 - cache tree to file (if possible on vscode) 
 - parsing whole tree on startup, interval (while parsing, use previous cache tree), 
 -> since relying on mostly events is risky -->
+### non-exist file  
+- it's not exist in forwardLinks keys, only exist in forwarLinks value   
+- blurred in graph 
+- should i give an id to it ? Yes, no collided with an existed one, because it's not existed 
 
 
 + cross-Platform 

@@ -6,8 +6,6 @@ VSCode marketplace: [Obsidian Visualizer](https://marketplace.visualstudio.com/i
 ![global graph demo](images/demo_dark.png)
 ## Features 
 
-**Currently only work on web version (Codespace)**
-
 - Local graph: open a markdown file, Command Pallete > Show Local Graph 
 - Global graph: Command Pallette > Show Global graph 
 - Force reparse: Command Pallette > Force workspace parse
@@ -37,6 +35,14 @@ Press F5 or  Command Pallete >Debug: Start Debugging
 
 
 ## Release Notes 
+
+### 1.1.1 
+ 
+- Remove relative links 
+
+### 1.1.0 
+
+- Desktop supports 
 
 ### 1.0.0
 

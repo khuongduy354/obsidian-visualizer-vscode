@@ -10,10 +10,10 @@ export type ObsiFile = {
 };
 
 export class ObsiFilesTracker extends vscode.Disposable {
-  forwardLinks = new Map<string, Array<ObsiFile>>();
+  forwardLinks = new Map<string, Array<ObsiFile>>(); //fap -> ObsiFile[]
 
   // may contain links to non-exist files
-  backLinks = new Map<string, Array<ObsiFile>>();
+  backLinks = new Map<string, Array<ObsiFile>>(); //fap -> ObsiFile[]
 
   //events
   onDidAddEmitter = new vscode.EventEmitter<vscode.Uri>();
@@ -21,6 +21,7 @@ export class ObsiFilesTracker extends vscode.Disposable {
   onDidUpdateEmitter = new vscode.EventEmitter<vscode.Uri>();
 
   // filename to files with full path
+  // use for resolving files quickly
   fileNameFullPathMap = new Map<string, Set<string>>();
   uriHandler: URIHandler;
 
@@ -36,7 +37,7 @@ export class ObsiFilesTracker extends vscode.Disposable {
     console.log("Back Links: ", this.backLinks);
     console.log("File Name Full Path Map: ", this.fileNameFullPathMap);
   }
-  async resolveFile(filename: string): Promise<string> {
+  async resolveFile(filename: string): Promise<string | undefined> {
     // /filename (absolute path)
     if (filename.startsWith("/")) return filename;
 
@@ -50,7 +51,7 @@ export class ObsiFilesTracker extends vscode.Disposable {
     // const pattern = `(\\b${filename}\\b)`;
     // const files = await vscode.workspace.findFiles(pattern);
 
-    return "";
+    return undefined;
   }
 
   async extractForwardLinks(content: string) {
@@ -60,11 +61,13 @@ export class ObsiFilesTracker extends vscode.Disposable {
         const fullPath = await this.resolveFile(forwardLink[1]);
         let uri: vscode.Uri | undefined;
 
-        uri = this.uriHandler.getFullURI(fullPath);
-
+        // || forwardLink[1] means if the file doesn't exist, we still keep the path
+        // and uri
+        uri = this.uriHandler.getFullURI(fullPath || forwardLink[1]);
         return {
-          path: fullPath,
+          path: fullPath || forwardLink[1],
           fullURI: uri,
+          notExist: fullPath === undefined,
         };
       })
     );
@@ -83,6 +86,7 @@ export class ObsiFilesTracker extends vscode.Disposable {
   }
   extractFileName(path: string) {
     if (!path.startsWith("/")) return path;
+    if (!path.includes("/")) return path;
 
     let parts = path.split("/");
     return parts[parts.length - 1];
@@ -100,6 +104,9 @@ export class ObsiFilesTracker extends vscode.Disposable {
     let uris: vscode.Uri[] = [];
     for (const folder of vscode.workspace.workspaceFolders) {
       const folderUri = this.uriHandler.getFullURI(folder.uri.path);
+
+      console.log("Folder's Uri: ", folder.uri.path);
+      console.log("Folder's Uri after transform: ", folderUri);
 
       const pattern = new vscode.RelativePattern(folderUri, "**/*.md");
 
@@ -137,33 +144,47 @@ export class ObsiFilesTracker extends vscode.Disposable {
     }
   }
 
-  async set(uri: vscode.Uri) {
-    // check if uri tracked
-    // let old = null;
-    // if (this.files.has(uri.path)) {
-    //   old = this.files.get(uri.path);
-    // }
+  resetStateOfFile(path: string) {
+    this.forwardLinks.delete(path);
+    for (let [file, fwLinks] of this.backLinks) {
+      if (fwLinks.some((fw) => fw.path === path)) {
+        if (fwLinks.length === 1)
+          this.backLinks.set(
+            file,
+            fwLinks.filter((fw) => fw.path !== path)
+          );
+        else this.backLinks.delete(file);
+      }
+    }
+  }
 
+  async set(uri: vscode.Uri) {
     const content = await this.readFile(uri);
     if (!content) return;
+
+    // reset link states of this file first
+    this.resetStateOfFile(uri.path);
 
     // parse forward links
     const forwardLinks = await this.extractForwardLinks(content);
 
     // save to data structure
     const path = uri.path;
-    this.forwardLinks.set(uri.path, forwardLinks);
+    this.forwardLinks.set(
+      uri.path,
+      forwardLinks.map((f) => ({ path: f.path, fullURI: f.fullURI }))
+    );
     // this.files.set(path, file);
 
-    for (let targetFile of forwardLinks) {
-      if (!targetFile.path.startsWith("/")) {
-        // path must be resolved in extractForwardLinks, must start with /
+    for (let _targetFile of forwardLinks) {
+      if (!_targetFile.path.startsWith("/") || _targetFile.notExist) {
+        // resolveable path must start with /
         continue;
       }
 
-      let fullURI = this.uriHandler.getFullURI(targetFile.path);
-      targetFile = {
-        path: targetFile.path,
+      let fullURI = this.uriHandler.getFullURI(_targetFile.path);
+      const targetFile = {
+        path: _targetFile.path,
         fullURI,
       } as ObsiFile;
 
@@ -187,16 +208,14 @@ export class ObsiFilesTracker extends vscode.Disposable {
   }
 
   async delete(uri: vscode.Uri) {
-    // delete from forward links and backlinks and files
-    // const file = this.files.get(path);
-
     let isFdDel = this.forwardLinks.delete(uri.path);
     let isBwDel = this.backLinks.delete(uri.path);
-    // this.files.delete(path);
-    // deleted = true;
+    let isCacheDel = this.fileNameFullPathMap.delete(
+      this.extractFileName(uri.path)
+    );
 
     // delete event
-    (isFdDel || isBwDel) && this.onDidDeleteEmitter.fire(uri);
+    (isFdDel || isBwDel || isCacheDel) && this.onDidDeleteEmitter.fire(uri);
   }
 
   dispose() {

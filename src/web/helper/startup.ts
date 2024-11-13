@@ -46,13 +46,13 @@ export function startup(): AppContext {
 
   // handle events
   obsiFilesTracker.onDidAddEmitter.event(() => {
-    globalGraph = graphBuilder.parseNeoGlobal();
+    appContext.globalGraph = graphBuilder.parseNeoGlobal();
   });
   obsiFilesTracker.onDidDeleteEmitter.event(() => {
-    globalGraph = graphBuilder.parseNeoGlobal();
+    appContext.globalGraph = graphBuilder.parseNeoGlobal();
   });
   obsiFilesTracker.onDidUpdateEmitter.event(() => {
-    globalGraph = graphBuilder.parseNeoGlobal();
+    appContext.globalGraph = graphBuilder.parseNeoGlobal();
   });
   return appContext;
 }
