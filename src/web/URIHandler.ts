@@ -26,9 +26,9 @@ export class URIHandler {
       return uri;
     }
 
-    if (isRelative) {
-      uri = vscode.Uri.joinPath(this.baseWorkspaceURI, path);
-    }
+    // if (isRelative) {
+    //   uri = vscode.Uri.joinPath(this.baseWorkspaceURI, path);
+    // }
 
     // if online
     if (baseScheme === "vscode-vfs") return uri;
