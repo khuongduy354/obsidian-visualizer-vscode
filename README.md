@@ -4,6 +4,15 @@ Providing core obsidian features in VSCode: graphs, backlinks,...
 
 VSCode marketplace: [Obsidian Visualizer](https://marketplace.visualstudio.com/items?itemName=khuongduy354.obsidian-visualizer)
 ![global graph demo](images/demo_dark.png)
+
+# Usage  
+Install the extension, it will read workspace on startup. After intial read, you can view global graph, local graph  
+
+If graphs doesn't rendered as intended: Command Pallete > Force workspace parse 
+
+**Notes:** Event listener under the hood for files editing, disable the extension if it cause performance problems.
+
+
 ## Features 
 
 - Local graph: open a markdown file, Command Pallete > Show Local Graph 
@@ -39,6 +48,8 @@ Press F5 or  Command Pallete >Debug: Start Debugging
 ### 1.1.1 
  
 - Remove relative links 
+- Fix text display in virtual file 
+- Fix graph reparse on events bug 
 
 ### 1.1.0 
 

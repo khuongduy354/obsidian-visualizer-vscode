@@ -22,6 +22,7 @@
 -> fix link resolver (move it out of extractForwardLinks)
 
 
+- performance issue in event???
 
 ## plans ahead      
 3. Search text in workspaces: grep is not supported in vscode api (stably)
