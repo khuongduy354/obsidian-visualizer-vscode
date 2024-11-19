@@ -162,7 +162,7 @@ export class GraphCreator {
 
     // apply search
     let graph = fullGraph.results[0].data[0].graph;
-    let newNodes = [];
+    let newNodesM = new Map<string, any>();
     let newRel = [];
 
     for (let node of graph.nodes) {
@@ -171,17 +171,23 @@ export class GraphCreator {
           ? this.obsiFilesTracker.extractFileName(node.id)
           : node.id;
       if (searchTarget.includes(keyword)) {
-        newNodes.push({ ...node });
-        for (let rel of graph.relationships) {
-          if (rel.startNode === node.id || rel.endNode === node.id) {
-            newRel.push({ ...rel });
-          }
+        newNodesM.set(node.id, { ...node });
+      }
+    }
+
+    for (let [id, node] of newNodesM.entries()) {
+      for (let rel of graph.relationships) {
+        if (
+          (rel.startNode === id && newNodesM.get(rel.endNode)) ||
+          (rel.endNode === id && newNodesM.get(rel.startNode))
+        ) {
+          newRel.push({ ...rel });
         }
       }
     }
 
     return this.simplifiedToFullGraph({
-      nodes: newNodes,
+      nodes: Array.from(newNodesM.values()),
       relationships: newRel,
     });
   }

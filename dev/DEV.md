@@ -1,4 +1,13 @@
 # now      
+- FIXING BUGS 
+filter apply on forwardlinks/backwardslink toggle also 
+(move graph options into appstate) 
+
+
+
+
+
+##### 
 
 - events in web(production) not worked: probably due to web 
 - delete events untested
@@ -6,17 +15,14 @@
 - lag when large connected node
 -> connection force too strong 
 
-
 - events in Desktop worked: 
 -> add auto rerendering graph webview 
-
 
 
  
 4. testing  # especially on links parse   
 
 
-5. Notfications: file read initially,  notify errors  if cant parse one 
 4. Attachments handling 
 -> parse it back (currently ignore ![[...]]) 
 -> fix link resolver (move it out of extractForwardLinks)

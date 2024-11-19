@@ -84,6 +84,10 @@ export function setupCommands(
               appContext.globalGraph,
               searchFilter
             );
+            console.log(
+              "Filtered Graph: ",
+              filteredGraph.results[0].data[0].graph
+            );
             webview.graphData = JSON.stringify(filteredGraph);
           },
         });
