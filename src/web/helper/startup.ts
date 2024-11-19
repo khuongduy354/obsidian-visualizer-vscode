@@ -32,13 +32,20 @@ export function startup(): AppContext {
   );
 
   // init workspace scan
+  vscode.window.showInformationMessage(
+    "ObsiVis: Reading all workspace files, only open graphs when ready!"
+  );
   obsiFilesTracker
     .readAllWorkspaceFiles()
     .then(() => {
+      vscode.window.showInformationMessage("Obsivis: Files read finished!!");
       console.log("Finished reading all workspace files");
       obsiFilesTracker.displayWorkspace();
       appContext.globalGraph = graphBuilder.parseNeoGlobal();
-      console.log("Finished parsing global graph", globalGraph);
+      console.log(
+        "Finished parsing global graph",
+        appContext.globalGraph.results[0].data[0].graph
+      );
     })
     .catch((err) => {
       console.error("FILE READ ERR: ", err);

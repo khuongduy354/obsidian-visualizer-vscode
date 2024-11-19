@@ -9,8 +9,6 @@ export function setupCommands(
   appContext: AppContext,
   context: vscode.ExtensionContext
 ): Commands {
-  let { graphBuilder, uriHandler, obsiFilesTracker, graphOption } = appContext;
-
   const showLocalGraphCommand = vscode.commands.registerTextEditorCommand(
     "obsidian-visualizer.showLocalGraph",
     (textEditor, edit) => {
@@ -19,9 +17,10 @@ export function setupCommands(
       if (!isMd) return;
 
       const selectedUri = textEditor.document.uri.path;
+      console.log("Selected URI: ", selectedUri);
 
       // parse local graph
-      const graph = graphBuilder.parseNeoLocal(selectedUri);
+      const graph = appContext.graphBuilder.parseNeoLocal(selectedUri);
 
       // render to webview
       const webview = new GraphWebView(context);
@@ -31,13 +30,13 @@ export function setupCommands(
         .setNodeListener({
           onNodeDoubleClick: function (message: any) {
             let uri = message.node.properties.fileFs;
-            uri = uriHandler.getFullURI(uri.path as string); // reparse to fix missing uri components
+            uri = appContext.uriHandler.getFullURI(uri.path as string); // reparse to fix missing uri components
 
             vscode.commands.executeCommand("vscode.open", uri);
           },
           onGraphOptionChanged: function (graphOption: GraphOption) {
             webview.graphData = JSON.stringify(
-              graphBuilder.parseNeoLocal(selectedUri, graphOption)
+              appContext.graphBuilder.parseNeoLocal(selectedUri, graphOption)
             );
             // vscode.commands.executeCommand("vscode.reloadWebviews");
           },
@@ -59,7 +58,7 @@ export function setupCommands(
       // const graph = graphBuilder.parseNeoGlobal();
 
       // render to webview
-      const webview = new GraphWebView(context, graphOption);
+      const webview = new GraphWebView(context, appContext.graphOption);
       console.log(
         "Global Graph: ",
         appContext.globalGraph.results[0].data[0].graph
@@ -70,18 +69,18 @@ export function setupCommands(
         .setNodeListener({
           onNodeDoubleClick: function (node: any) {
             let uri = node.properties.fileFs;
-            uri = uriHandler.getFullURI(uri.path as string); // reparse to fix missing uri components
+            uri = appContext.uriHandler.getFullURI(uri.path as string); // reparse to fix missing uri components
             if (uri !== undefined)
               vscode.commands.executeCommand("vscode.open", uri);
           },
           onGraphOptionChanged: function (graphOption: GraphOption) {
             webview.graphData = JSON.stringify(
-              graphBuilder.parseNeoGlobal(graphOption)
+              appContext.graphBuilder.parseNeoGlobal(graphOption)
             );
             // vscode.commands.executeCommand("vscode.reloadWebviews");
           },
           onSearchChanged: function (searchFilter: string) {
-            let filteredGraph = graphBuilder.applySearchFilter(
+            let filteredGraph = appContext.graphBuilder.applySearchFilter(
               appContext.globalGraph,
               searchFilter
             );
@@ -94,12 +93,21 @@ export function setupCommands(
   const forceWorkspaceParseCommand = vscode.commands.registerCommand(
     "obsidian-visualizer.forceWorkspaceParse",
     () => {
-      obsiFilesTracker
+      vscode.window.showInformationMessage(
+        "ObsiVis: Re-reading all workspace files, only open graphs when ready"
+      );
+      appContext.obsiFilesTracker
         .readAllWorkspaceFiles()
         .then(() => {
-          vscode.window.showInformationMessage("Files read ");
+          vscode.window.showInformationMessage(
+            "ObsiVis: Files re-read finished!!"
+          );
 
-          appContext.globalGraph = graphBuilder.parseNeoGlobal();
+          appContext.globalGraph = appContext.graphBuilder.parseNeoGlobal();
+          console.log(
+            "Global graph after reparse:",
+            appContext.globalGraph.results[0].data[0].graph
+          );
         })
         .catch((err) => {
           console.error("FILE READ ERR: ", err);

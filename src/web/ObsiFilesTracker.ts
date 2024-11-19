@@ -33,9 +33,19 @@ export class ObsiFilesTracker extends vscode.Disposable {
   }
 
   displayWorkspace() {
-    console.log("Forward Links: ", this.forwardLinks);
-    console.log("Back Links: ", this.backLinks);
-    console.log("File Name Full Path Map: ", this.fileNameFullPathMap);
+    const printMap = (map: Map<string, any>) => {
+      let str = "";
+      for (let [key, value] of map) {
+        str += key + " -> " + value + "\n";
+      }
+      return str;
+    };
+    console.log("Forward Links: ", printMap(this.forwardLinks));
+    console.log("Back Links: ", printMap(this.backLinks));
+    console.log(
+      "File Name Full Path Map: ",
+      printMap(this.fileNameFullPathMap)
+    );
   }
   async resolveFile(filename: string): Promise<string | undefined> {
     // /filename (absolute path)
@@ -95,6 +105,7 @@ export class ObsiFilesTracker extends vscode.Disposable {
   async readAllWorkspaceFiles() {
     this.forwardLinks.clear();
     this.backLinks.clear();
+    this.fileNameFullPathMap.clear();
     // let files: [] = [];
 
     if (!vscode.workspace.workspaceFolders)
@@ -140,7 +151,7 @@ export class ObsiFilesTracker extends vscode.Disposable {
       if (uri.path.split(".").pop() !== "md") continue;
 
       uri = this.uriHandler.getFullURI(uri.path);
-      await this.set(uri);
+      await this.set(uri, false);
     }
   }
 
@@ -158,9 +169,9 @@ export class ObsiFilesTracker extends vscode.Disposable {
     }
   }
 
-  async set(uri: vscode.Uri) {
+  async set(uri: vscode.Uri, fireEvents = true) {
     const content = await this.readFile(uri);
-    if (!content) return;
+    if (content === null) return;
 
     // reset link states of this file first
     this.resetStateOfFile(uri.path);
@@ -203,8 +214,10 @@ export class ObsiFilesTracker extends vscode.Disposable {
     }
 
     // fire events
-    this.onDidUpdateEmitter.fire(uri);
-    this.onDidAddEmitter.fire(uri);
+    if (fireEvents) {
+      this.onDidUpdateEmitter.fire(uri);
+      this.onDidAddEmitter.fire(uri);
+    }
   }
 
   async delete(uri: vscode.Uri) {
