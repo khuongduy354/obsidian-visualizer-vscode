@@ -54,7 +54,9 @@ export class ObsiFilesTracker extends vscode.Disposable {
     // filename
     // 1. get from cached
     // default as first one because that's how resolve work if you don't specify;
-    let filePaths = this.fileNameFullPathMap.get(filename);
+    let filePaths =
+      this.fileNameFullPathMap.get(filename) ||
+      this.fileNameFullPathMap.get(filename + ".md");
     if (filePaths && filePaths.size > 0) return filePaths.values().next().value;
 
     // // 2. TODO: regex from workspaces
