@@ -26,8 +26,8 @@ export class GraphCreator {
     // );
   }
 
-  getFullUri(path: string, isRel = true) {
-    return this.uriHandler.getFullURI(path, isRel);
+  getFullUri(path: string) {
+    return this.uriHandler.getFullURI(path);
   }
 
   parseNeoLocal(

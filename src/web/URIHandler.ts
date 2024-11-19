@@ -16,36 +16,37 @@ export class URIHandler {
   }
 
   // get full uri from a of current workspace
-  getFullURI(path: string, isRelative = true) {
-    const baseScheme = this.baseWorkspaceURI.scheme;
+  getFullURI(path: string) {
+    try {
+      const baseScheme = this.baseWorkspaceURI.scheme;
 
-    let uri = this.baseWorkspaceURI.with({ path: path });
+      let uri = this.baseWorkspaceURI.with({ path: path });
 
-    //if on desktop (desktop don't use relative path)
-    if (baseScheme === "file") {
-      return uri;
+      //if on desktop (desktop don't use relative path)
+      if (baseScheme === "file") return uri;
+
+      // if (isRelative) {
+      //   uri = vscode.Uri.joinPath(this.baseWorkspaceURI, path);
+      // }
+
+      // if online
+      if (baseScheme === "vscode-vfs") return uri;
+
+      // if testing
+      if (baseScheme === "vscode-test-web") {
+        // strip /static/extensions/fs
+        if (path.startsWith("/static/extensions/fs"))
+          path = path.replace("/static/extensions/fs", "");
+
+        return this.baseWorkspaceURI.with({ path });
+      }
+
+      if (baseScheme === "http")
+        return vscode.Uri.joinPath(this.baseWorkspaceURI, path);
+    } catch (e) {
+      console.error(e, " error occurs at: ", path);
     }
-
-    // if (isRelative) {
-    //   uri = vscode.Uri.joinPath(this.baseWorkspaceURI, path);
-    // }
-
-    // if online
-    if (baseScheme === "vscode-vfs") return uri;
-
-    // if testing
-    if (baseScheme === "vscode-test-web") {
-      // strip /static/extensions/fs
-      if (path.startsWith("/static/extensions/fs"))
-        path = path.replace("/static/extensions/fs", "");
-
-      return this.baseWorkspaceURI.with({ path });
-    }
-
-    if (baseScheme === "http")
-      return vscode.Uri.joinPath(this.baseWorkspaceURI, path);
-
-    throw new Error("Unsupported scheme");
+    throw new Error("Unsupported scheme: " + path);
   }
 
   static joinPath(...args: string[]) {

@@ -6,7 +6,7 @@ export type ObsiFile = {
   path: string;
 
   // full path that is accessible by vscode
-  fullURI: vscode.Uri;
+  fullURI?: vscode.Uri;
 };
 
 export class ObsiFilesTracker extends vscode.Disposable {
@@ -68,12 +68,16 @@ export class ObsiFilesTracker extends vscode.Disposable {
     const linkRegex = /(?<!\!)\[\[(.*?)\]\]/g;
     let forwardLinks = await Promise.all(
       [...content.matchAll(linkRegex)].map(async (forwardLink) => {
+        // attempt to resolve file
         const fullPath = await this.resolveFile(forwardLink[1]);
         let uri: vscode.Uri | undefined;
 
-        // || forwardLink[1] means if the file doesn't exist, we still keep the path
-        // and uri
-        uri = this.uriHandler.getFullURI(fullPath || forwardLink[1]);
+        const path = fullPath || forwardLink[1]; // if fullpath unresolveable, use grepped text
+
+        // if grepped text not start with /, it's not a path => no uri
+        uri = path.startsWith("/")
+          ? this.uriHandler.getFullURI(path)
+          : undefined;
         return {
           path: fullPath || forwardLink[1],
           fullURI: uri,

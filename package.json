@@ -46,7 +46,7 @@
     "watch-web": "webpack --watch",
     "package-web": "webpack --mode production --devtool hidden-source-map",
     "lint": "eslint src --ext ts",
-    "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. ./src/web/test/suite/asset"
+    "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. ../sample-obsidian-vault"
   },
   "devDependencies": {
     "@types/vscode": "^1.0.0",
