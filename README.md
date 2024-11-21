@@ -21,7 +21,8 @@ If graphs doesn't rendered as intended: Command Pallete > Force workspace parse
 - Global graph: Command Pallette > Show Global graph 
 - Force reparse: Command Pallette > Force workspace parse
 - Link resolve given a filename or a path
-- GUI 
+- GUI
+    - double click on node to open file
     - highlighted when mouse over a node 
     - toggle forward links, backlinks
     - showing non-exist files (as blurred)    
