@@ -5,6 +5,8 @@ Providing core obsidian features in VSCode: graphs, backlinks,...
 VSCode marketplace: [Obsidian Visualizer](https://marketplace.visualstudio.com/items?itemName=khuongduy354.obsidian-visualizer)
 ![global graph demo](images/demo_dark.png)
 
+![1.1.2.png](images/1.1.2.png)
+
 # Usage  
 Install the extension, it will read workspace on startup. After intial read, you can view global graph, local graph  
 
@@ -44,6 +46,18 @@ Press F5 or  Command Pallete >Debug: Start Debugging
 
 
 ## Release Notes 
+
+### 1.1.2    
+
+- Add more notifications 
+
+* Fix bugs: 
+- Searching filter out nodes in relationship with result nodes, that is not part of the results. 
+- Empty files (which was skipped in previous versions) is now tracked.
+- Virtual nodes now has a undefined (null-ish) uri instead of a placeholder like before 
+
+
+
 
 ### 1.1.1 
  

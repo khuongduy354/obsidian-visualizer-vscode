@@ -271,7 +271,7 @@ export class GraphWebView {
   </head>
   <body>
   <div class="container">  
-    <h3>Currently supports outgoing links (forward links) only</h3>
+    <h3>Graph view</h3>
     ${this.generateConfigPanel()}
     <div class="graph"></div> 
   </div>
