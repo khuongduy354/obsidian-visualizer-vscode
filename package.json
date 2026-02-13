@@ -3,7 +3,7 @@
   "displayName": "Obsidian Visualizer",
   "description": "Obsidian graphs, backlinks,... visualization by opening vault in VSCode",
   "icon": "images/demo_dark.png",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "publisher": "khuongduy354",
   "repository": {
     "url": "https://github.com/khuongduy354/obsidian-visualizer-vscode"
@@ -68,6 +68,62 @@
           ],
           "default": "obsidian",
           "description": "Link style to parse: 'obsidian' for [[...]], 'markdown' for [...](...), or 'both'."
+        },
+        "obsidianVisualizer.graph.nodeSize": {
+          "type": "number",
+          "default": 20,
+          "minimum": 5,
+          "maximum": 50,
+          "description": "Size of nodes in the graph (radius in pixels)"
+        },
+        "obsidianVisualizer.graph.fontSize": {
+          "type": "number",
+          "default": 11,
+          "minimum": 6,
+          "maximum": 24,
+          "description": "Font size for node labels"
+        },
+        "obsidianVisualizer.graph.repulsionForce": {
+          "type": "number",
+          "default": 800,
+          "minimum": 100,
+          "maximum": 3000,
+          "description": "Repulsion force between nodes (higher = more spread out)"
+        },
+        "obsidianVisualizer.graph.linkDistance": {
+          "type": "number",
+          "default": 120,
+          "minimum": 30,
+          "maximum": 500,
+          "description": "Ideal distance between connected nodes"
+        },
+        "obsidianVisualizer.graph.linkStrength": {
+          "type": "number",
+          "default": 0.005,
+          "minimum": 0.001,
+          "maximum": 0.1,
+          "description": "Strength of link attraction force"
+        },
+        "obsidianVisualizer.graph.centerForce": {
+          "type": "number",
+          "default": 0.01,
+          "minimum": 0,
+          "maximum": 0.1,
+          "description": "Force pulling nodes toward center (prevents drift)"
+        },
+        "obsidianVisualizer.graph.collisionRadius": {
+          "type": "number",
+          "default": 35,
+          "minimum": 10,
+          "maximum": 100,
+          "description": "Collision detection radius to prevent node overlap"
+        },
+        "obsidianVisualizer.graph.velocityDecay": {
+          "type": "number",
+          "default": 0.4,
+          "minimum": 0.1,
+          "maximum": 0.9,
+          "description": "Velocity decay (friction). Higher = nodes settle faster"
         }
       }
     }

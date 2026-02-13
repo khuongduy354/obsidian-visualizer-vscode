@@ -12,6 +12,16 @@ export class GraphWebView {
   states = {
     searchInput: "",
     searchCursorPos: 0,
+    graphSettings: {
+      nodeSize: 20,
+      fontSize: 11,
+      repulsionForce: 800,
+      linkDistance: 120,
+      linkStrength: 0.005,
+      centerForce: 0.01,
+      collisionRadius: 35,
+      velocityDecay: 0.4,
+    },
   };
 
   appContext: AppContext;
@@ -24,6 +34,21 @@ export class GraphWebView {
     this.context = context;
     this.appContext = appContext;
     this.graphOption = graphOption;
+
+    // Load graph settings from VSCode config as defaults
+    const config = vscode.workspace.getConfiguration(
+      "obsidianVisualizer.graph",
+    );
+    this.states.graphSettings = {
+      nodeSize: config.get("nodeSize", 20),
+      fontSize: config.get("fontSize", 11),
+      repulsionForce: config.get("repulsionForce", 800),
+      linkDistance: config.get("linkDistance", 120),
+      linkStrength: config.get("linkStrength", 0.005),
+      centerForce: config.get("centerForce", 0.01),
+      collisionRadius: config.get("collisionRadius", 35),
+      velocityDecay: config.get("velocityDecay", 0.4),
+    };
   }
 
   reloadGlobalGraph() {
@@ -114,6 +139,14 @@ export class GraphWebView {
             if (onSearchChanged) onSearchChanged(message.searchFilter);
             this.refresh();
             break;
+          case "onGraphSettingChanged":
+            // Update the setting in state
+            const settingKey =
+              message.setting as keyof typeof this.states.graphSettings;
+            this.states.graphSettings[settingKey] = message.value;
+            // Refresh to apply the new settings
+            this.refresh();
+            break;
           default:
             console.error("Unknown command: ", message.command);
             break;
@@ -124,11 +157,16 @@ export class GraphWebView {
     );
   }
 
+  getGraphConfig() {
+    return JSON.stringify(this.states.graphSettings);
+  }
+
   generateConfigPanel() {
+    const s = this.states.graphSettings;
     return `   
         <div class="config-panel">
             <div class="control-group">
-                <h3>Settings</h3>
+                <h3>Links</h3>
                 <div class="toggle-container">
                     <label class="switch">
                         <input type="checkbox" id="forwardLinks" ${
@@ -148,6 +186,47 @@ export class GraphWebView {
                     <span class="label-text">Backward Links</span>
                 </div> 
             </div>
+            
+            <div class="control-group">
+                <h3>Visual</h3>
+                <div class="slider-container">
+                    <label>Node Size: <span id="nodeSize-value">${s.nodeSize}</span></label>
+                    <input type="range" id="nodeSize" min="5" max="50" value="${s.nodeSize}" step="1">
+                </div>
+                <div class="slider-container">
+                    <label>Font Size: <span id="fontSize-value">${s.fontSize}</span></label>
+                    <input type="range" id="fontSize" min="6" max="24" value="${s.fontSize}" step="1">
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3>Forces</h3>
+                <div class="slider-container">
+                    <label>Repulsion: <span id="repulsionForce-value">${s.repulsionForce}</span></label>
+                    <input type="range" id="repulsionForce" min="100" max="3000" value="${s.repulsionForce}" step="100">
+                </div>
+                <div class="slider-container">
+                    <label>Link Distance: <span id="linkDistance-value">${s.linkDistance}</span></label>
+                    <input type="range" id="linkDistance" min="30" max="500" value="${s.linkDistance}" step="10">
+                </div>
+                <div class="slider-container">
+                    <label>Link Strength: <span id="linkStrength-value">${s.linkStrength}</span></label>
+                    <input type="range" id="linkStrength" min="0.001" max="0.1" value="${s.linkStrength}" step="0.001">
+                </div>
+                <div class="slider-container">
+                    <label>Center Force: <span id="centerForce-value">${s.centerForce}</span></label>
+                    <input type="range" id="centerForce" min="0" max="0.1" value="${s.centerForce}" step="0.01">
+                </div>
+                <div class="slider-container">
+                    <label>Collision Radius: <span id="collisionRadius-value">${s.collisionRadius}</span></label>
+                    <input type="range" id="collisionRadius" min="10" max="100" value="${s.collisionRadius}" step="5">
+                </div>
+                <div class="slider-container">
+                    <label>Damping: <span id="velocityDecay-value">${s.velocityDecay}</span></label>
+                    <input type="range" id="velocityDecay" min="0.1" max="0.9" value="${s.velocityDecay}" step="0.1">
+                </div>
+            </div>
+            
             <div class="control-group">
                 <h3>Legend</h3>
                 <div class="legend-item">
@@ -190,6 +269,22 @@ export class GraphWebView {
       vscode.postMessage({
         command: "onGraphOptionChanged",
         graphOption,
+      });
+    });
+
+    // Graph settings sliders
+    const settingIds = ['nodeSize', 'fontSize', 'repulsionForce', 'linkDistance', 'linkStrength', 'centerForce', 'collisionRadius', 'velocityDecay'];
+    settingIds.forEach(function(id) {
+      const slider = document.getElementById(id);
+      const valueSpan = document.getElementById(id + '-value');
+      slider.addEventListener('input', function() {
+        const value = parseFloat(this.value);
+        valueSpan.textContent = value;
+        vscode.postMessage({
+          command: "onGraphSettingChanged",
+          setting: id,
+          value: value
+        });
       });
     });
 
@@ -373,6 +468,46 @@ export class GraphWebView {
     .label-text {
         margin-left: 10px;
         font-size: 13px;
+    }
+
+    /* Slider controls */
+    .slider-container {
+        margin-bottom: 12px;
+    }
+    
+    .slider-container label {
+        display: block;
+        font-size: 12px;
+        margin-bottom: 4px;
+        color: var(--text-color);
+    }
+    
+    .slider-container input[type="range"] {
+        width: 100%;
+        height: 4px;
+        border-radius: 2px;
+        background: var(--vscode-input-background, #3c3c3c);
+        outline: none;
+        -webkit-appearance: none;
+    }
+    
+    .slider-container input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--accent-color);
+        cursor: pointer;
+    }
+    
+    .slider-container input[type="range"]::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--accent-color);
+        cursor: pointer;
+        border: none;
     }
 
     /* Legend */
@@ -559,7 +694,11 @@ export class GraphWebView {
       // vscode already acquired in config panel script
       const graphData = ${data};
       
+      // Get graph configuration from VSCode settings
+      const graphConfig = ${this.getGraphConfig()};
+      
       console.log("Graph data:", graphData);
+      console.log("Graph config:", graphConfig);
       console.log("Container exists:", document.querySelector(".graph"));
       
       // Wait for DOM to be fully ready
@@ -572,6 +711,7 @@ export class GraphWebView {
       function initGraph() {
         try {
           var renderer = new GraphRenderer('.graph', {
+            ...graphConfig,
             onNodeDoubleClick: function(properties) {
               vscode.postMessage({
                 command: 'onNodeDoubleClick',

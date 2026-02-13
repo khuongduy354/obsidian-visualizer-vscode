@@ -36,6 +36,33 @@ If graphs doesn't rendered as intended: Command Pallete > Force workspace parse
 **Note**: it will included all markdown files recursively starting from the root directory of current workspace, multiple workspace not supported
 
 
+## Configuration 
+
+### Graph Visualization
+
+The graph view includes interactive controls in the UI panel to adjust:
+
+**Visual Settings:**
+- Node Size (5-50): Adjust node radius
+- Font Size (6-24): Label text size
+
+**Force Simulation:**
+- Repulsion (100-3000): How much nodes push apart
+- Link Distance (30-500): Ideal distance between connected nodes
+- Link Strength (0.001-0.1): How strongly links pull nodes together
+- Center Force (0-0.1): Gravity toward center
+- Collision Radius (10-100): Prevents node overlap
+- Damping (0.1-0.9): Friction/settling speed
+
+**Tip for large vaults:** Increase Repulsion and Link Distance to reduce clutter. Adjust settings live while viewing the graph!
+
+You can also set default values in VSCode settings (`obsidianVisualizer.graph.*`).
+
+### File Filtering
+
+- `include`: Glob patterns for files to include (empty = all files)
+- `exclude`: Glob patterns to exclude (default: `node_modules`, hidden folders)
+- `linkPattern`: Parse `obsidian` `[[...]]`, `markdown` `[](...)`, or `both`
 
 
 ## Run from source 

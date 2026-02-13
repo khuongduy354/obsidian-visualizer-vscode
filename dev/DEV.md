@@ -1,4 +1,9 @@
 # now      
+- User-configurable graph settings (DONE - Feb 2026)
+  - Added VSCode settings for node size, forces, and physics
+  - Similar to Obsidian's graph customization
+  - Helps with large vault clutter
+
 - FIXING BUGS 
 filter apply on forwardlinks/backwardslink toggle also 
 (move graph options into appstate) 

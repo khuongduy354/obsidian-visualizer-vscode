@@ -37,14 +37,18 @@ class GraphRenderer {
         this.running = false;
         this.alpha = 1.0;
         this.alphaDecay = 0.02;
-        this.velocityDecay = 0.4;
 
-        // Force params
-        this.repulsion = 800;
-        this.attractionStrength = 0.005;
-        this.linkDistance = 120;
-        this.centerStrength = 0.01;
-        this.collisionRadius = 35;
+        // Visual params (from config)
+        this.nodeSize = options.nodeSize || 20;
+        this.fontSize = options.fontSize || 11;
+        
+        // Force params (from config)
+        this.velocityDecay = options.velocityDecay || 0.4;
+        this.repulsion = options.repulsionForce || 800;
+        this.attractionStrength = options.linkStrength || 0.005;
+        this.linkDistance = options.linkDistance || 120;
+        this.centerStrength = options.centerForce || 0.01;
+        this.collisionRadius = options.collisionRadius || 35;
     }
 
     // ── SVG Helpers ──────────────────────────────────────
@@ -140,13 +144,15 @@ class GraphRenderer {
             ['backward', '#f44336'],
             ['bidirectional', '#9c27b0']
         ];
+        var self = this;
+        var arrowRefX = (self.nodeSize + 8).toString();
         for (var m = 0; m < markerCfg.length; m++) {
             var name = markerCfg[m][0];
             var color = markerCfg[m][1];
             var marker = this._svgEl('marker', {
                 id: 'arrow-' + name,
                 viewBox: '0 -5 10 10',
-                refX: '28', refY: '0',
+                refX: arrowRefX, refY: '0',
                 markerWidth: '7', markerHeight: '7',
                 orient: 'auto'
             });
@@ -192,7 +198,7 @@ class GraphRenderer {
         for (var i = 0; i < this.nodes.length; i++) {
             var nd = this.nodes[i];
             var circle = this._svgEl('circle', {
-                r: '20',
+                r: this.nodeSize.toString(),
                 fill: nd.isVirtual ? '#666' : '#cccccc',
                 stroke: '#454545',
                 'stroke-width': '2',
@@ -211,10 +217,10 @@ class GraphRenderer {
             var nd = this.nodes[i];
             var text = this._svgEl('text', {
                 'text-anchor': 'middle',
-                'font-size': '11px',
+                'font-size': this.fontSize + 'px',
                 fill: '#cccccc',
                 'pointer-events': 'none',
-                dy: '33',
+                dy: (this.nodeSize + 13).toString(),
                 'class': 'graph-label'
             });
             text.textContent = nd.label;
@@ -300,11 +306,11 @@ class GraphRenderer {
                     node.fy = node.y;
                 });
                 el.addEventListener('mouseenter', function() {
-                    el.setAttribute('r', '25');
+                    el.setAttribute('r', (self.nodeSize * 1.25).toString());
                     self._highlight(el._data);
                 });
                 el.addEventListener('mouseleave', function() {
-                    el.setAttribute('r', '20');
+                    el.setAttribute('r', self.nodeSize.toString());
                     self._clearHighlight();
                 });
                 el.addEventListener('dblclick', function(e) {
