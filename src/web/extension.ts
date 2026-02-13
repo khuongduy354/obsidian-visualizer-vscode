@@ -4,6 +4,7 @@ import { GraphWebView } from "./webview/GraphWebView";
 import { startup } from "./helper/startup";
 import { setupCommands } from "./commands";
 import { LinkCompletionProvider } from "./LinkCompletionProvider";
+import { LinkDocumentLinkProvider } from "./LinkDocumentLinkProvider";
 
 export function activate(context: vscode.ExtensionContext) {
   try {
@@ -22,12 +23,22 @@ export function activate(context: vscode.ExtensionContext) {
         "(", // trigger on (
       );
 
+    // Register document link provider for Ctrl+Click navigation
+    const linkDocProvider = new LinkDocumentLinkProvider(
+      appContext.obsiFilesTracker,
+    );
+    const docLinkDisposable = vscode.languages.registerDocumentLinkProvider(
+      { language: "markdown", scheme: "*" },
+      linkDocProvider,
+    );
+
     context.subscriptions.push(
       commands.forceWorkspaceParseCommand,
       commands.showLocalGraphCommand,
       commands.showGlobalGraphCommand,
       appContext.obsiFilesTracker,
       completionDisposable,
+      docLinkDisposable,
     );
 
     // push watcher service if available

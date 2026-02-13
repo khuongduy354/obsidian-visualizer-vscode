@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { WebviewEventHandlers } from "../types/WebViewEventHandlers";
 import { GraphOption } from "../types/GraphOption";
 import { AppContext } from "../AppContext";
+import { CustomGraphRenderer } from "./CustomGraphRenderer";
 
 export class GraphWebView {
   context: vscode.ExtensionContext;
@@ -85,20 +86,9 @@ export class GraphWebView {
     return this;
   }
 
-  loadLibs(panel: vscode.WebviewPanel) {
-    const baseUri = this.context.extensionUri;
-
-    const basePath = vscode.Uri.joinPath(baseUri, "images");
-    const neoPath = vscode.Uri.joinPath(basePath, "neo4jd3.min.js");
-    const d3Path = vscode.Uri.joinPath(basePath, "d3.min.js");
-
-    const neo4jlib = panel.webview.asWebviewUri(neoPath);
-    const d3lib = panel.webview.asWebviewUri(d3Path);
-
-    // const neo4jlib = "";
-    // const d3lib = "https://cdnjs.cloudflare.com/ajax/libs/d3/4.0.0/d3.js";
-
-    return { neo4jlib, d3lib };
+  loadLibs(_panel: vscode.WebviewPanel) {
+    // No external libraries needed - renderer is fully self-contained
+    return {};
   }
 
   setNodeListener(webviewEventHandlers: WebviewEventHandlers) {
@@ -295,10 +285,7 @@ export class GraphWebView {
     `;
   }
 
-  getGraphWebViewHtml(
-    libs: { neo4jlib: vscode.Uri | string; d3lib: vscode.Uri | string },
-    data: string,
-  ) {
+  getGraphWebViewHtml(_libs: Record<string, never>, data: string) {
     return `
 <html lang="en">
   <head>
@@ -328,12 +315,20 @@ export class GraphWebView {
       color: var(--text-color);
       font-family: var(--vscode-font-family);
       overflow: hidden;
+      width: 100vw;
+      height: 100vh;
     }
     
     .container {
-      height: 100vh;
+      width: 100%;
+      height: 100%;
       display: flex;
       flex-direction: column;
+    }
+    
+    h3 {
+      margin: 10px 20px;
+      flex-shrink: 0;
     }
     
     .neo4jd3 {
@@ -468,41 +463,84 @@ export class GraphWebView {
         outline: 1px solid var(--accent-color);
     }
 
-    /* Graph */
-    .blur {
-      opacity: 0.3;
+    /* Graph Styles */
+    .graph {
+        width: 100%;
+        flex: 1;
+        min-height: 0;
+        position: relative;
     }
     
-    .text { 
-      font-size: 12px;
-      fill: var(--text-color);
-    } 
-
-    .highlighted {  
-      stroke: var(--accent-color) !important;
-      stroke-width: 2px;
+    svg {
+        width: 100%;
+        height: 100%;
+        display: block;
     }
     
     .node {
+        fill: var(--vscode-editor-foreground, #cccccc);
         stroke: var(--border-color);
-        stroke-width: 1px;
+        stroke-width: 2px;
+        cursor: pointer;
+        transition: all 0.2s;
     }
-
-    /* Link Styles */
-    .relationship {
-        stroke: var(--link-default);
+    
+    .node.virtual {
+        opacity: 0.3;
+        fill: var(--vscode-descriptionForeground, #999);
     }
-    .relationship path {
-        stroke: var(--link-default);
+    
+    .node.dimmed {
+        opacity: 0.2;
     }
-    .link-forward path {
-        stroke: var(--link-forward) !important;
+    
+    .node.highlighted {
+        stroke: var(--accent-color) !important;
+        stroke-width: 3px;
+        filter: drop-shadow(0 0 8px var(--accent-color));
     }
-    .link-backward path {
-        stroke: var(--link-backward) !important;
+    
+    .link {
+        stroke-width: 2;
+        fill: none;
+        transition: all 0.2s;
     }
-    .link-bidirectional path {
-        stroke: var(--link-bidirectional) !important;
+    
+    .link-forward {
+        stroke: var(--link-forward);
+    }
+    
+    .link-backward {
+        stroke: var(--link-backward);
+    }
+    
+    .link-bidirectional {
+        stroke: var(--link-bidirectional);
+    }
+    
+    .link.dimmed {
+        opacity: 0.2;
+    }
+    
+    .link.highlighted {
+        stroke-width: 3;
+        filter: drop-shadow(0 0 5px currentColor);
+    }
+    
+    .label {
+        font-size: 12px;
+        fill: var(--text-color);
+        pointer-events: none;
+        user-select: none;
+    }
+    
+    .label.dimmed {
+        opacity: 0.2;
+    }
+    
+    /* Remove old neo4j styles */
+    .blur {
+      opacity: 0.3;
     }
     </style>
   </head>
@@ -513,34 +551,43 @@ export class GraphWebView {
     <div class="graph"></div> 
   </div>
 
-    <script src="${libs.neo4jlib}"></script>
-    <script src="${libs.d3lib}"></script> 
     <script> 
+      console.log("Script loading...");
+      
+      ${CustomGraphRenderer}
+      
       // vscode already acquired in config panel script
-       
-      var neo4jd3 = new Neo4jd3(".graph", {
-        highlight: [
-          {
-            class: "File", 
-          },
-        ],
-        minCollision: 60,
-        neo4jData: ${data},
-        nodeRadius: 25, 
-        icons:{
-          "File":""
-        },
-        onNodeDoubleClick: function (node) {
-            vscode.postMessage({
-                command: "onNodeDoubleClick",
-                node: node,
-            });
-        },
-        infoPanel: false,
-        zoomFit: false, 
-      }); 
+      const graphData = ${data};
+      
+      console.log("Graph data:", graphData);
+      console.log("Container exists:", document.querySelector(".graph"));
+      
+      // Wait for DOM to be fully ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initGraph);
+      } else {
+        initGraph();
+      }
+      
+      function initGraph() {
+        try {
+          var renderer = new GraphRenderer('.graph', {
+            onNodeDoubleClick: function(properties) {
+              vscode.postMessage({
+                command: 'onNodeDoubleClick',
+                node: { properties: properties }
+              });
+            }
+          });
+          renderer.render(graphData);
+          console.log('Graph rendered successfully');
+        } catch (err) {
+          console.error('Graph init error:', err);
+          document.querySelector('.graph').innerHTML =
+            '<div style="color:#f44;padding:20px">Error: ' + err.message + '<br><pre>' + err.stack + '</pre></div>';
+        }
+      }
     </script> 
-    ${this.setStyleScripts()}
   </body>
 </html>
   `;

@@ -12,8 +12,6 @@ Install the extension, it will read workspace on startup. After intial read, you
 
 If graphs doesn't rendered as intended: Command Pallete > Force workspace parse 
 
-**Notes:** Event listener under the hood for files editing, disable the extension if it cause performance problems.
-
 
 ## Features 
 
@@ -21,11 +19,16 @@ If graphs doesn't rendered as intended: Command Pallete > Force workspace parse
 - Global graph: Command Pallette > Show Global graph 
 - Force reparse: Command Pallette > Force workspace parse
 - Link resolve given a filename or a path
+- **Autocomplete**: Type `[[` or `](` to get file suggestions
+- **Ctrl+Click**: Navigate to linked files by Ctrl/Cmd+Click on `[[link]]` or `[](link)`
 - GUI
     - double click on node to open file
-    - highlighted when mouse over a node 
+    - **smart hover**: highlights connected nodes and edges when hovering
     - toggle forward links, backlinks
-    - showing non-exist files (as blurred)    
+    - **directional arrows**: green (forward), red (backward), purple (bidirectional)
+    - showing non-exist files (as blurred)
+    - **auto-refresh** when files or settings change
+    - **smooth interactions**: drag nodes, zoom/pan, optimized for large vaults
 - Search (global graph only) 
     - filename: <keyword>          (starts search with filename:)
     - path: <keyword>              (starts search with path:)
@@ -47,6 +50,34 @@ Press F5 or  Command Pallete >Debug: Start Debugging
 
 
 ## Release Notes 
+
+### 1.1.4
+
+**Major UI Overhaul:**
+- Custom D3 graph renderer (replaced neo4jd3) for better performance
+- Directional arrows on links showing link direction
+- Smart hover highlighting: connected nodes and edges light up
+- Ctrl+Click navigation: Navigate to files by clicking links in markdown
+- Optimized force simulation: no more bouncing nodes in large vaults
+- Smooth animations and interactions (drag, zoom, pan)
+
+**Performance:**
+- Better handling of large vaults (100+ files)
+- Stable graph layout with auto-stabilization
+- Reduced memory usage
+
+### 1.1.3
+
+**New Features:**
+- Link autocomplete: Type `[[` or `](` to get file suggestions
+- Colored links: forward (green), backward (red), bidirectional (purple)
+- Auto-refresh: Graph updates automatically when files or exclude/include settings change
+
+**Bug Fixes:**
+- Fixed resource leaks in file watchers and event listeners
+- Fixed link color rendering in global graph
+- Fixed backlinks data corruption on file updates
+- Performance improvements (eliminated duplicate graph parsing)
 
 ### 1.1.2    
 
