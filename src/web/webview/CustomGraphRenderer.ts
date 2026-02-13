@@ -151,34 +151,8 @@ class GraphRenderer {
         });
         this.svg = svg;
 
-        // Arrow marker defs
-        var defs = this._svgEl('defs');
-        var markerCfg = [
-            ['forward', '#4caf50'],
-            ['backward', '#f44336'],
-            ['bidirectional', '#9c27b0']
-        ];
         var self = this;
-        // Use base nodeSize for arrow offset (average case)
-        var arrowRefX = (self.nodeSize + 10).toString();
-        for (var m = 0; m < markerCfg.length; m++) {
-            var name = markerCfg[m][0];
-            var color = markerCfg[m][1];
-            var marker = this._svgEl('marker', {
-                id: 'arrow-' + name,
-                viewBox: '0 -5 10 10',
-                refX: arrowRefX, refY: '0',
-                markerWidth: '7', markerHeight: '7',
-                orient: 'auto'
-            });
-            var arrow = this._svgEl('path', {
-                d: 'M0,-4L10,0L0,4Z',
-                fill: color
-            });
-            marker.appendChild(arrow);
-            defs.appendChild(marker);
-        }
-        svg.appendChild(defs);
+        svg.appendChild(this._svgEl('defs'));
 
         // Main transform group
         this.gMain = this._svgEl('g');
@@ -192,16 +166,15 @@ class GraphRenderer {
         this.gMain.appendChild(gNodes);
         this.gMain.appendChild(gLabels);
 
-        // Create link lines
-        var linkColors = { forward: '#4caf50', backward: '#f44336', bidirectional: '#9c27b0' };
+        // Create link lines (muted colors like Obsidian)
+        var linkColors = { forward: '#4a8a6a', backward: '#8a5a5a', bidirectional: '#7a6a8a' };
         this.linkEls = [];
         for (var i = 0; i < this.links.length; i++) {
             var link = this.links[i];
             var line = this._svgEl('line', {
-                stroke: linkColors[link.category] || '#a5abb6',
-                'stroke-width': '1.5',
-                'opacity': '0.3',
-                'marker-end': 'url(#arrow-' + (link.category || 'forward') + ')',
+                stroke: linkColors[link.category] || '#6a7080',
+                'stroke-width': '1',
+                'opacity': '0.25',
                 'class': 'graph-link'
             });
             line._data = link;
@@ -209,17 +182,16 @@ class GraphRenderer {
             this.linkEls.push(line);
         }
 
-        // Create node circles (scaled by degree)
+        // Create node circles (scaled by degree, soft Obsidian style)
         this.nodeEls = [];
         for (var i = 0; i < this.nodes.length; i++) {
             var nd = this.nodes[i];
             var r = Math.round(this.nodeSize * nd.scale);
             var circle = this._svgEl('circle', {
                 r: r.toString(),
-                fill: nd.isVirtual ? '#666' : '#cccccc',
-                stroke: '#454545',
-                'stroke-width': '2',
-                opacity: nd.isVirtual ? '0.35' : '1',
+                fill: nd.isVirtual ? '#555' : '#b8b8c8',
+                stroke: 'none',
+                opacity: nd.isVirtual ? '0.3' : '0.9',
                 cursor: 'pointer',
                 'class': 'graph-node'
             });
@@ -228,7 +200,7 @@ class GraphRenderer {
             this.nodeEls.push(circle);
         }
 
-        // Create labels (scaled by degree)
+        // Create labels (scaled by degree, visibility controlled by zoom)
         this.labelEls = [];
         for (var i = 0; i < this.nodes.length; i++) {
             var nd = this.nodes[i];
@@ -238,14 +210,18 @@ class GraphRenderer {
                 'font-size': Math.round(this.fontSize * nd.scale) + 'px',
                 fill: '#cccccc',
                 'pointer-events': 'none',
-                dy: (r + 13).toString(),
-                'class': 'graph-label'
+                dy: (r + 10).toString(),
+                'class': 'graph-label',
+                'opacity': '0'
             });
             text.textContent = nd.label;
             text._data = nd;
             gLabels.appendChild(text);
             this.labelEls.push(text);
         }
+
+        // Apply initial label visibility
+        this._updateLabelVisibility();
 
         this.containerEl.appendChild(svg);
     }
@@ -268,6 +244,7 @@ class GraphRenderer {
             self.viewY = my - (my - self.viewY) * (newScale / oldScale);
             self.viewScale = newScale;
             self._applyTransform();
+            self._updateLabelVisibility();
         }, { passive: false });
 
         // Pan on background drag
@@ -326,12 +303,14 @@ class GraphRenderer {
                 el.addEventListener('mouseenter', function() {
                     var nd = el._data;
                     var r = Math.round(self.nodeSize * nd.scale);
-                    el.setAttribute('r', Math.round(r * 1.25).toString());
+                    el.setAttribute('r', Math.round(r * 1.3).toString());
+                    el.setAttribute('fill', '#ddddf0');
                     self._highlight(nd);
                 });
                 el.addEventListener('mouseleave', function() {
                     var nd = el._data;
                     el.setAttribute('r', Math.round(self.nodeSize * nd.scale).toString());
+                    el.setAttribute('fill', nd.isVirtual ? '#555' : '#b8b8c8');
                     self._clearHighlight();
                 });
                 el.addEventListener('dblclick', function(e) {
@@ -354,8 +333,8 @@ class GraphRenderer {
             var lEl = this.linkEls[i];
             var d = lEl._data;
             var isConn = d.source.id === node.id || d.target.id === node.id;
-            lEl.setAttribute('opacity', isConn ? '1' : '0.1');
-            lEl.setAttribute('stroke-width', isConn ? '2.5' : '1.5');
+            lEl.setAttribute('opacity', isConn ? '0.8' : '0.05');
+            lEl.setAttribute('stroke-width', isConn ? '1.5' : '1');
             if (isConn) {
                 connected[d.source.id] = true;
                 connected[d.target.id] = true;
@@ -365,37 +344,58 @@ class GraphRenderer {
             var nEl = this.nodeEls[i];
             var d = nEl._data;
             var isConn = !!connected[d.id];
-            nEl.setAttribute('opacity', isConn ? (d.isVirtual ? '0.5' : '1') : '0.15');
-            if (d.id === node.id) {
-                nEl.setAttribute('stroke', '#007acc');
-                nEl.setAttribute('stroke-width', '3');
-            }
+            nEl.setAttribute('opacity', isConn ? (d.isVirtual ? '0.5' : '1') : '0.08');
         }
+        // Show labels for connected nodes during hover
         for (var i = 0; i < this.labelEls.length; i++) {
             var tEl = this.labelEls[i];
-            tEl.setAttribute('opacity', connected[tEl._data.id] ? '1' : '0.15');
+            tEl.setAttribute('opacity', connected[tEl._data.id] ? '1' : '0');
         }
     }
 
     _clearHighlight() {
         for (var i = 0; i < this.linkEls.length; i++) {
-            this.linkEls[i].setAttribute('opacity', '0.3');
-            this.linkEls[i].setAttribute('stroke-width', '1.5');
+            this.linkEls[i].setAttribute('opacity', '0.25');
+            this.linkEls[i].setAttribute('stroke-width', '1');
         }
         for (var i = 0; i < this.nodeEls.length; i++) {
             var d = this.nodeEls[i]._data;
-            this.nodeEls[i].setAttribute('opacity', d.isVirtual ? '0.35' : '1');
-            this.nodeEls[i].setAttribute('stroke', '#454545');
-            this.nodeEls[i].setAttribute('stroke-width', '2');
+            this.nodeEls[i].setAttribute('opacity', d.isVirtual ? '0.3' : '0.9');
         }
-        for (var i = 0; i < this.labelEls.length; i++) {
-            this.labelEls[i].setAttribute('opacity', '1');
-        }
+        this._updateLabelVisibility();
     }
 
     _applyTransform() {
         this.gMain.setAttribute('transform',
             'translate(' + this.viewX + ',' + this.viewY + ') scale(' + this.viewScale + ')');
+    }
+
+    _updateLabelVisibility() {
+        // Show labels based on zoom level and node importance (degree)
+        // At low zoom: only show high-degree node labels
+        // At high zoom: show all labels
+        var scale = this.viewScale;
+        for (var i = 0; i < this.labelEls.length; i++) {
+            var nd = this.labelEls[i]._data;
+            // Threshold: node needs enough "visual importance" to show label
+            // importance = degree * zoom. Show label when importance > threshold
+            var importance = nd.degree * scale;
+            var show = false;
+            if (scale > 2.0) {
+                show = true; // zoomed in enough: show all
+            } else if (scale > 1.0) {
+                show = nd.degree >= 2; // medium zoom: show nodes with 2+ connections
+            } else if (scale > 0.6) {
+                show = nd.degree >= 5; // normal zoom: show nodes with 5+ connections
+            } else {
+                show = nd.degree >= 10; // zoomed out: only major hubs
+            }
+            this.labelEls[i].setAttribute('opacity', show ? '0.9' : '0');
+            // Scale font inversely with zoom so labels stay readable
+            var baseFs = Math.round(this.fontSize * nd.scale);
+            var displayFs = Math.max(8, Math.round(baseFs / Math.max(scale, 0.3)));
+            this.labelEls[i].setAttribute('font-size', displayFs + 'px');
+        }
     }
 
     // ── Force Simulation ─────────────────────────────────

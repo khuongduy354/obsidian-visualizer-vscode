@@ -19,13 +19,13 @@ export class GraphWebView {
     searchCursorPos: 0,
     restoreFocusToSearch: false,
     graphSettings: {
-      nodeSize: 16,
-      fontSize: 10,
-      repulsionForce: 1500,
-      linkDistance: 200,
-      linkStrength: 0.003,
-      centerForce: 0.015,
-      collisionRadius: 30,
+      nodeSize: 6,
+      fontSize: 14,
+      repulsionForce: 2000,
+      linkDistance: 300,
+      linkStrength: 0.002,
+      centerForce: 0.01,
+      collisionRadius: 40,
       velocityDecay: 0.4,
     },
   };
@@ -46,13 +46,13 @@ export class GraphWebView {
       "obsidianVisualizer.graph",
     );
     this.states.graphSettings = {
-      nodeSize: config.get("nodeSize", 20),
-      fontSize: config.get("fontSize", 11),
-      repulsionForce: config.get("repulsionForce", 800),
-      linkDistance: config.get("linkDistance", 120),
-      linkStrength: config.get("linkStrength", 0.005),
+      nodeSize: config.get("nodeSize", 6),
+      fontSize: config.get("fontSize", 14),
+      repulsionForce: config.get("repulsionForce", 2000),
+      linkDistance: config.get("linkDistance", 300),
+      linkStrength: config.get("linkStrength", 0.002),
       centerForce: config.get("centerForce", 0.01),
-      collisionRadius: config.get("collisionRadius", 35),
+      collisionRadius: config.get("collisionRadius", 40),
       velocityDecay: config.get("velocityDecay", 0.4),
     };
   }
@@ -198,11 +198,11 @@ export class GraphWebView {
                 <h3>Visual</h3>
                 <div class="slider-container">
                     <label>Node Size: <span id="nodeSize-value">${s.nodeSize}</span></label>
-                    <input type="range" id="nodeSize" min="5" max="50" value="${s.nodeSize}" step="1">
+                    <input type="range" id="nodeSize" min="2" max="50" value="${s.nodeSize}" step="1">
                 </div>
                 <div class="slider-container">
                     <label>Font Size: <span id="fontSize-value">${s.fontSize}</span></label>
-                    <input type="range" id="fontSize" min="6" max="24" value="${s.fontSize}" step="1">
+                    <input type="range" id="fontSize" min="6" max="30" value="${s.fontSize}" step="1">
                 </div>
             </div>
             
@@ -210,11 +210,11 @@ export class GraphWebView {
                 <h3>Forces</h3>
                 <div class="slider-container">
                     <label>Repulsion: <span id="repulsionForce-value">${s.repulsionForce}</span></label>
-                    <input type="range" id="repulsionForce" min="100" max="3000" value="${s.repulsionForce}" step="100">
+                    <input type="range" id="repulsionForce" min="100" max="5000" value="${s.repulsionForce}" step="100">
                 </div>
                 <div class="slider-container">
                     <label>Link Distance: <span id="linkDistance-value">${s.linkDistance}</span></label>
-                    <input type="range" id="linkDistance" min="30" max="500" value="${s.linkDistance}" step="10">
+                    <input type="range" id="linkDistance" min="30" max="800" value="${s.linkDistance}" step="10">
                 </div>
                 <div class="slider-container">
                     <label>Link Strength: <span id="linkStrength-value">${s.linkStrength}</span></label>
