@@ -9,21 +9,13 @@ export class GraphCreator {
   obsiFilesTracker: ObsiFilesTracker;
 
   onDidUpdateEmitter = new vscode.EventEmitter<void>();
-  // disposables: vscode.Disposable[] = [this.onDidUpdateEmitter];
 
   constructor(
     obsiFilesTracker: ObsiFilesTracker,
-    uriHandler: URIHandler = new URIHandler()
+    uriHandler: URIHandler = new URIHandler(),
   ) {
     this.uriHandler = uriHandler;
     this.obsiFilesTracker = obsiFilesTracker;
-
-    // i think these can be parse at runtime for more accuracy
-    // this.disposables.push(
-    //   this.obsiFilesTracker.onDidAddEmitter.event(this.parseNeoGlobal),
-    //   this.obsiFilesTracker.onDidDeleteEmitter.event(this.parseNeoGlobal),
-    //   this.obsiFilesTracker.onDidUpdateEmitter.event(this.parseNeoGlobal)
-    // );
   }
 
   getFullUri(path: string) {
@@ -32,7 +24,7 @@ export class GraphCreator {
 
   parseNeoLocal(
     localPath: string,
-    options: GraphOption | undefined = undefined
+    options: GraphOption | undefined = undefined,
   ): FullNeo4jFormat {
     const startFile = this.uriHandler.getFullURI(localPath);
 
@@ -80,7 +72,7 @@ export class GraphCreator {
             properties: {
               fileFs: forwardFile.fullURI,
               isFileVirtual: !this.obsiFilesTracker.forwardLinks.has(
-                forwardFile.path
+                forwardFile.path,
               ), // if keyed, file exist
             },
           });
@@ -141,7 +133,7 @@ export class GraphCreator {
 
   applySearchFilter(
     fullGraph: FullNeo4jFormat,
-    searchFilter: string
+    searchFilter: string,
   ): FullNeo4jFormat {
     let keyword = "";
     let searchMode: "filename" | "path" = "filename";
@@ -208,7 +200,7 @@ export class GraphCreator {
   }
 
   parseNeoGlobal(
-    graphOption: GraphOption | undefined = undefined
+    graphOption: GraphOption | undefined = undefined,
   ): FullNeo4jFormat {
     // graph option
     let parseFd = true;
@@ -264,7 +256,6 @@ export class GraphCreator {
               isFileVirtual: true,
             },
           });
-          // target.set(relNode, []);
         }
 
         // ignore if not parse forward
@@ -283,9 +274,4 @@ export class GraphCreator {
     return this.simplifiedToFullGraph(result);
     // see sample format in helper/sampleNeo4j.js
   }
-
-  // dispose() {
-  //   this.disposables.forEach((d) => d.dispose());
-  //   this.disposables = [];
-  // }
 }

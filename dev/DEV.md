@@ -87,6 +87,19 @@ obsifile = fap + full uri
 - cache tree to file (if possible on vscode) 
 - parsing whole tree on startup, interval (while parsing, use previous cache tree), 
 -> since relying on mostly events is risky -->
+
+### Events flow
+File change
+    ↓
+WatcherService (debounced, .md filtered, rename detection)
+    ↓
+ObsiFilesTracker.set(uri) — incremental update of forwardLinks/backLinks
+    ↓
+fires onDidUpdate/Add/Delete event
+    ↓
+WatcherService listener calls parseNeoGlobal()
+    ↓
+AppContext.globalGraph updated (cheap O(n) scan)
 ### non-exist file  
 - it's not exist in forwardLinks keys, only exist in forwarLinks value   
 - blurred in graph 

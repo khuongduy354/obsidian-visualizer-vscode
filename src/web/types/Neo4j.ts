@@ -7,12 +7,12 @@ export type FullNeo4jFormat = {
   }[];
 };
 
-type Neo4jNode = {
+export type Neo4jNode = {
   id: string;
   labels: string[];
   properties: any;
 };
-type Neo4jRelationship = {
+export type Neo4jRelationship = {
   id: string;
   type: string;
   startNode: string;

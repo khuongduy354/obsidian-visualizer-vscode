@@ -15,9 +15,13 @@ export function activate(context: vscode.ExtensionContext) {
       commands.forceWorkspaceParseCommand,
       commands.showLocalGraphCommand,
       commands.showGlobalGraphCommand,
-      appContext.watcher,
-      appContext.obsiFilesTracker
+      appContext.obsiFilesTracker,
     );
+
+    // push watcher service if available
+    if (appContext.watcherService) {
+      context.subscriptions.push(appContext.watcherService);
+    }
   } catch (e) {
     console.error(e);
   }

@@ -1,0 +1,33 @@
+# Plan: Incremental Graph Updates & Event Flow Cleanup
+
+Replace full `parseNeoGlobal()` rebuilds on every file change with targeted incremental graph mutations, centralize the watcher/event flow, and fix `graphOption` persistence.
+
+## Steps
+
+1. **Add an indexed graph store in `GraphCreator`** — maintain a `Map<string, Neo4jNode>` and `Map<string, Neo4jRelationship>` alongside the current `FullNeo4jFormat` output in GraphCreator.ts. This allows O(1) lookups for patching instead of rebuilding flat arrays. (is it maintained in ObsiFilesTracker)
+
+2. **Implement incremental mutation methods on `GraphCreator`** — add `updateFile(fap)`, `deleteFile(fap)`, `addFile(fap)`:
+   - `updateFile`: remove old forward-link edges from that node, re-derive from `ObsiFilesTracker.forwardLinks`, re-add edges + any new virtual nodes. *(Only forward links change on content edit.)*
+   - `deleteFile`: remove the node, its forward edges, its backlink edges, and prune orphaned virtual nodes.
+   - `addFile`: insert node, derive forward edges, rebuild affected backlinks.
+   - Each method mutates the indexed store then regenerates the flat `FullNeo4jFormat` from the maps.
+
+3. **Fix double-fire bug in `ObsiFilesTracker.set()`** — ObsiFilesTracker.ts fires both `onDidAdd` and `onDidUpdate` for the same operation. Ensure only one event fires per `set()` call (add if new key, update if existing key).
+
+4. **Centralize watcher + event wiring into a single `WatcherService`** — replace VSCodeWatcher.ts and the loose event listeners in startup.ts with a class that:
+   - Owns the `FileSystemWatcher` and all event subscriptions.
+   - Filters to `.md` files only (avoids rebuilds on non-markdown edits).
+   - Maps `onDidAdd/Update/Delete` → calls the new incremental methods on `GraphCreator`.
+   - Collects all disposables in one `dispose()`.
+
+5. **Move `graphOption` into `AppContext` as persistent state** — AppContext.ts already holds `graphOption` but the webview toggle handler in GraphWebView.ts doesn't write back to it. Wire the toggle `postMessage` handler to update `appContext.graphOption`, and pass the current value when opening any graph command in commands.ts.
+
+6. **Update webview to consume incremental data** — currently GraphWebView.ts does full HTML replacement on every change. As a first step, keep that behavior but feed it the pre-built graph from the indexed store (cheaper to serialize). Incremental DOM diffing can be a follow-up.
+
+
+1. **Debounce rapid file saves?** The watcher may fire multiple times during auto-save — consider a 200–300ms debounce on the incremental update calls to batch rapid edits. There's already a debounce.test.ts — is debouncing already partially implemented? 
+
+(yes do this) 
+
+2. **File rename detection** — VSCode's `FileSystemWatcher` emits delete + create for renames, not a dedicated rename event. The incremental `deleteFile` + `addFile` sequence handles this, but backlink resolution may temporarily break between the two events — batch them or detect rename pairs via a short delay. 
+(yes too) 

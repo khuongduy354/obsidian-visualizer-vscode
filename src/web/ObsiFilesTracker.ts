@@ -44,7 +44,7 @@ export class ObsiFilesTracker extends vscode.Disposable {
     console.log("Back Links: ", printMap(this.backLinks));
     console.log(
       "File Name Full Path Map: ",
-      printMap(this.fileNameFullPathMap)
+      printMap(this.fileNameFullPathMap),
     );
   }
   async resolveFile(filename: string): Promise<string | undefined> {
@@ -85,7 +85,7 @@ export class ObsiFilesTracker extends vscode.Disposable {
           fullURI: uri,
           notExist: fullPath === undefined,
         };
-      })
+      }),
     );
 
     return forwardLinks;
@@ -168,7 +168,7 @@ export class ObsiFilesTracker extends vscode.Disposable {
         if (fwLinks.length === 1)
           this.backLinks.set(
             file,
-            fwLinks.filter((fw) => fw.path !== path)
+            fwLinks.filter((fw) => fw.path !== path),
           );
         else this.backLinks.delete(file);
       }
@@ -178,6 +178,9 @@ export class ObsiFilesTracker extends vscode.Disposable {
   async set(uri: vscode.Uri, fireEvents = true) {
     const content = await this.readFile(uri);
     if (content === null) return;
+
+    // track whether this is a new file or an update
+    const isNew = !this.forwardLinks.has(uri.path);
 
     // reset link states of this file first
     this.resetStateOfFile(uri.path);
@@ -189,7 +192,7 @@ export class ObsiFilesTracker extends vscode.Disposable {
     const path = uri.path;
     this.forwardLinks.set(
       uri.path,
-      forwardLinks.map((f) => ({ path: f.path, fullURI: f.fullURI }))
+      forwardLinks.map((f) => ({ path: f.path, fullURI: f.fullURI })),
     );
     // this.files.set(path, file);
 
@@ -211,7 +214,7 @@ export class ObsiFilesTracker extends vscode.Disposable {
       const file: ObsiFile = { path, fullURI: uri };
       this.backLinks.set(
         targetFile.path,
-        backLinks ? [...backLinks, file] : [file]
+        backLinks ? [...backLinks, file] : [file],
       );
 
       // if (!this.files.has(targetFile.path)) {
@@ -219,10 +222,13 @@ export class ObsiFilesTracker extends vscode.Disposable {
       // }
     }
 
-    // fire events
+    // fire events: only one per operation
     if (fireEvents) {
-      this.onDidUpdateEmitter.fire(uri);
-      this.onDidAddEmitter.fire(uri);
+      if (isNew) {
+        this.onDidAddEmitter.fire(uri);
+      } else {
+        this.onDidUpdateEmitter.fire(uri);
+      }
     }
   }
 
@@ -230,7 +236,7 @@ export class ObsiFilesTracker extends vscode.Disposable {
     let isFdDel = this.forwardLinks.delete(uri.path);
     let isBwDel = this.backLinks.delete(uri.path);
     let isCacheDel = this.fileNameFullPathMap.delete(
-      this.extractFileName(uri.path)
+      this.extractFileName(uri.path),
     );
 
     // delete event

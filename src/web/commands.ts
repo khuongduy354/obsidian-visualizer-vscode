@@ -7,7 +7,7 @@ import { AppContext } from "./AppContext";
 
 export function setupCommands(
   appContext: AppContext,
-  context: vscode.ExtensionContext
+  context: vscode.ExtensionContext,
 ): Commands {
   const showLocalGraphCommand = vscode.commands.registerTextEditorCommand(
     "obsidian-visualizer.showLocalGraph",
@@ -35,10 +35,10 @@ export function setupCommands(
             vscode.commands.executeCommand("vscode.open", uri);
           },
           onGraphOptionChanged: function (graphOption: GraphOption) {
+            appContext.setGraphOption(graphOption);
             webview.graphData = JSON.stringify(
-              appContext.graphBuilder.parseNeoLocal(selectedUri, graphOption)
+              appContext.graphBuilder.parseNeoLocal(selectedUri, graphOption),
             );
-            // vscode.commands.executeCommand("vscode.reloadWebviews");
           },
           // onSearchChanged: function (searchFilter: string) {
           //   let filteredGraph = graphBuilder.applySearchFilter(
@@ -48,7 +48,7 @@ export function setupCommands(
           //   webview.graphData = JSON.stringify(filteredGraph);
           // },
         });
-    }
+    },
   );
 
   const showGlobalGraphCommand = vscode.commands.registerCommand(
@@ -61,7 +61,7 @@ export function setupCommands(
       const webview = new GraphWebView(context, appContext.graphOption);
       console.log(
         "Global Graph: ",
-        appContext.globalGraph.results[0].data[0].graph
+        appContext.globalGraph.results[0].data[0].graph,
       );
       webview
         .initializeWebView(appContext.globalGraph, "Global Graph")
@@ -74,49 +74,49 @@ export function setupCommands(
               vscode.commands.executeCommand("vscode.open", uri);
           },
           onGraphOptionChanged: function (graphOption: GraphOption) {
+            appContext.setGraphOption(graphOption);
             webview.graphData = JSON.stringify(
-              appContext.graphBuilder.parseNeoGlobal(graphOption)
+              appContext.graphBuilder.parseNeoGlobal(graphOption),
             );
-            // vscode.commands.executeCommand("vscode.reloadWebviews");
           },
           onSearchChanged: function (searchFilter: string) {
             let filteredGraph = appContext.graphBuilder.applySearchFilter(
               appContext.globalGraph,
-              searchFilter
+              searchFilter,
             );
             console.log(
               "Filtered Graph: ",
-              filteredGraph.results[0].data[0].graph
+              filteredGraph.results[0].data[0].graph,
             );
             webview.graphData = JSON.stringify(filteredGraph);
           },
         });
-    }
+    },
   );
 
   const forceWorkspaceParseCommand = vscode.commands.registerCommand(
     "obsidian-visualizer.forceWorkspaceParse",
     () => {
       vscode.window.showInformationMessage(
-        "ObsiVis: Re-reading all workspace files, only open graphs when ready"
+        "ObsiVis: Re-reading all workspace files, only open graphs when ready",
       );
       appContext.obsiFilesTracker
         .readAllWorkspaceFiles()
         .then(() => {
           vscode.window.showInformationMessage(
-            "ObsiVis: Files re-read finished!!"
+            "ObsiVis: Files re-read finished!!",
           );
 
           appContext.globalGraph = appContext.graphBuilder.parseNeoGlobal();
           console.log(
             "Global graph after reparse:",
-            appContext.globalGraph.results[0].data[0].graph
+            appContext.globalGraph.results[0].data[0].graph,
           );
         })
         .catch((err) => {
           console.error("FILE READ ERR: ", err);
         });
-    }
+    },
   );
 
   return {

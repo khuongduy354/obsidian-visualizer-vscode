@@ -10,22 +10,26 @@ export class AppContext {
   uriHandler: URIHandler;
   globalGraph: FullNeo4jFormat;
   graphOption: GraphOption;
-  watcher: vscode.FileSystemWatcher;
   obsiFilesTracker: ObsiFilesTracker;
+
+  // WatcherService is set after construction (circular dep: it needs AppContext)
+  watcherService?: vscode.Disposable;
 
   constructor(
     graphBuilder: GraphCreator,
     uriHandler: URIHandler,
     globalGraph: FullNeo4jFormat,
     graphOption: GraphOption,
-    watcher: vscode.FileSystemWatcher,
-    obsiFilesTracker: ObsiFilesTracker
+    obsiFilesTracker: ObsiFilesTracker,
   ) {
     this.graphBuilder = graphBuilder;
     this.uriHandler = uriHandler;
     this.globalGraph = globalGraph;
     this.graphOption = graphOption;
-    this.watcher = watcher;
     this.obsiFilesTracker = obsiFilesTracker;
+  }
+
+  setGraphOption(option: GraphOption) {
+    this.graphOption = option;
   }
 }
