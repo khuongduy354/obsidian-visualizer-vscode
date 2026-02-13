@@ -56,11 +56,15 @@ export class GraphCreator {
     const addedNodes = new Map<ObsiFile, boolean>();
     const addedRels = new Map<string, boolean>();
 
+    // Track relationships to identify bidirectional links
+    const relationships = new Map<
+      string,
+      { type: "forward" | "backward"; id: string }
+    >();
+
     // FORWARD LINKS
     const forwardFiles =
       this.obsiFilesTracker.forwardLinks.get(startFile.path) || [];
-    // if (forwardFiles === undefined || forwardFiles === null)
-    //   throw new Error("File not exist or tracked, please rerun extension.");
 
     if (parseFd) {
       for (let forwardFile of forwardFiles) {
@@ -80,14 +84,19 @@ export class GraphCreator {
         }
 
         // forward link
-        const linkId = startFile.path + forwardFile.path;
+        const linkId = startFile.path + "->" + forwardFile.path;
         if (!addedRels.has(linkId)) {
+          // Just store it for now, push later
+          relationships.set(forwardFile.path, { type: "forward", id: linkId });
+
           result.relationships.push({
             id: linkId,
             type: "LINKS_TO",
             startNode: startFile.path,
             endNode: forwardFile.path,
-            properties: {},
+            properties: {
+              linkCategory: "forward", // default, might change to bidirectional
+            },
           });
           addedRels.set(linkId, true);
         }
@@ -97,7 +106,6 @@ export class GraphCreator {
     // BACKLINKS
     const backFiles = this.obsiFilesTracker.backLinks.get(startFile.path) || [];
     console.log("Backlinks of: ", startFile, "is: ", backFiles);
-    // if (!Array.isArray(backFiles))
 
     if (parseBw) {
       for (const backFile of backFiles) {
@@ -114,14 +122,32 @@ export class GraphCreator {
         }
 
         // backlinks
-        const linkId = backFile.path + startFile.path;
+        const linkId = backFile.path + "->" + startFile.path;
         if (!addedRels.has(linkId)) {
+          let category = "backward";
+
+          // Check for bidirectional (if we already have a forward link to this backFile)
+          // relationships key is the OTHER node's path
+          const existingForward = relationships.get(backFile.path);
+          if (existingForward && existingForward.type === "forward") {
+            category = "bidirectional";
+            // Update the existing forward link to be bidirectional too
+            const forwardRel = result.relationships.find(
+              (r) => r.id === existingForward.id,
+            );
+            if (forwardRel) {
+              forwardRel.properties.linkCategory = "bidirectional";
+            }
+          }
+
           result.relationships.push({
             id: linkId,
             type: "LINKS_TO",
             startNode: backFile.path,
             endNode: startFile.path,
-            properties: {},
+            properties: {
+              linkCategory: category,
+            },
           });
           addedRels.set(linkId, true);
         }
@@ -216,24 +242,10 @@ export class GraphCreator {
       relationships: [],
     };
 
-    // backlinks
-    if (parseBw) {
-      for (let [file, backFiles] of this.obsiFilesTracker.backLinks.entries()) {
-        for (let backFile of backFiles) {
-          result.relationships.push({
-            id: file + backFile.path,
-            type: "LINKS_TO",
-            startNode: file,
-            endNode: backFile.path,
-            properties: {
-              isBacklink: true,
-            },
-          });
-        }
-      }
-    }
+    // Track bidirectional links: map of "nodeA->nodeB" to relationship
+    const relMap = new Map<string, any>();
 
-    // node creation
+    // Forward links first
     for (const [file, forwardFiles] of target.forwardLinks.entries()) {
       result.nodes.push({
         id: file,
@@ -243,10 +255,8 @@ export class GraphCreator {
         },
       });
 
-      // forward links
       for (let forwardFile of forwardFiles) {
         // this make sure that relation to non-exist files must point to a node
-        // file not exist check
         if (!target.forwardLinks.has(forwardFile.path)) {
           result.nodes.push({
             id: forwardFile.path,
@@ -258,20 +268,53 @@ export class GraphCreator {
           });
         }
 
-        // ignore if not parse forward
         if (parseFd) {
-          result.relationships.push({
-            id: file + forwardFile.path,
+          const relId = file + forwardFile.path;
+          const rel = {
+            id: relId,
             type: "LINKS_TO",
             startNode: file,
             endNode: forwardFile.path,
-            properties: {},
+            properties: {
+              linkCategory: "forward",
+            },
+          };
+          result.relationships.push(rel);
+          relMap.set(relId, rel);
+        }
+      }
+    }
+
+    // Backlinks - check for bidirectional
+    if (parseBw) {
+      for (let [file, backFiles] of this.obsiFilesTracker.backLinks.entries()) {
+        for (let backFile of backFiles) {
+          const relId = file + backFile.path;
+
+          // Check if reverse direction exists (making it bidirectional)
+          const reverseId = backFile.path + file;
+          const reverseRel = relMap.get(reverseId);
+
+          let category = "backward";
+          if (reverseRel) {
+            category = "bidirectional";
+            reverseRel.properties.linkCategory = "bidirectional";
+          }
+
+          result.relationships.push({
+            id: relId,
+            type: "LINKS_TO",
+            startNode: file,
+            endNode: backFile.path,
+            properties: {
+              isBacklink: true,
+              linkCategory: category,
+            },
           });
         }
       }
     }
 
     return this.simplifiedToFullGraph(result);
-    // see sample format in helper/sampleNeo4j.js
   }
 }

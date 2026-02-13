@@ -25,11 +25,48 @@ export class ObsiFilesTracker extends vscode.Disposable {
   fileNameFullPathMap = new Map<string, Set<string>>();
   uriHandler: URIHandler;
 
+  private configListener: vscode.Disposable;
+
   constructor(uriHandler = new URIHandler()) {
     super(() => {});
     this.uriHandler = uriHandler;
 
-    // setup watcher
+    // Listener for config changes (store disposable for cleanup)
+    this.configListener = vscode.workspace.onDidChangeConfiguration((e) => {
+      if (
+        e.affectsConfiguration("obsidianVisualizer.include") ||
+        e.affectsConfiguration("obsidianVisualizer.exclude")
+      ) {
+        this.readAllWorkspaceFiles();
+      }
+    });
+  }
+
+  isIncluded(doc: vscode.TextDocument): boolean {
+    const config = vscode.workspace.getConfiguration("obsidianVisualizer");
+    const include = config.get<string[]>("include") || [];
+    const exclude = config.get<string[]>("exclude") || [
+      "**/node_modules/**",
+      "**/.*/**",
+    ];
+
+    // Check exclude first (precedence)
+    if (exclude.length > 0) {
+      const excludePattern =
+        exclude.length > 1 ? `{${exclude.join(",")}}` : exclude[0];
+      const score = vscode.languages.match({ pattern: excludePattern }, doc);
+      if (score > 0) return false;
+    }
+
+    // Check include
+    if (include.length > 0) {
+      const includePattern =
+        include.length > 1 ? `{${include.join(",")}}` : include[0];
+      const score = vscode.languages.match({ pattern: includePattern }, doc);
+      if (score === 0) return false;
+    }
+
+    return true;
   }
 
   displayWorkspace() {
@@ -67,34 +104,60 @@ export class ObsiFilesTracker extends vscode.Disposable {
   }
 
   async extractForwardLinks(content: string) {
-    const linkRegex = /(?<!\!)\[\[(.*?)\]\]/g;
-    let forwardLinks = await Promise.all(
-      [...content.matchAll(linkRegex)].map(async (forwardLink) => {
-        // attempt to resolve file
-        const fullPath = await this.resolveFile(forwardLink[1]);
-        let uri: vscode.Uri | undefined;
+    const config = vscode.workspace.getConfiguration("obsidianVisualizer");
+    const linkPattern = config.get<string>("linkPattern") || "obsidian";
 
-        const path = fullPath || forwardLink[1]; // if fullpath unresolveable, use grepped text
+    const links: {
+      path: string;
+      fullURI: vscode.Uri | undefined;
+      notExist: boolean;
+    }[] = [];
 
-        // if grepped text not start with /, it's not a path => no uri
-        uri = path.startsWith("/")
-          ? this.uriHandler.getFullURI(path)
-          : undefined;
-        return {
-          path: fullPath || forwardLink[1],
-          fullURI: uri,
-          notExist: fullPath === undefined,
-        };
-      }),
-    );
+    const obsRegex = /(?<!\!)\[\[(.*?)\]\]/g;
+    const mdRegex = /(?<!\!)\[.*?\]\((.*?)\)/g;
 
-    return forwardLinks;
+    const regexes = [];
+    if (linkPattern === "obsidian" || linkPattern === "both")
+      regexes.push(obsRegex);
+    if (linkPattern === "markdown" || linkPattern === "both")
+      regexes.push(mdRegex);
+
+    for (const regex of regexes) {
+      const matches = [...content.matchAll(regex)];
+      const currentLinks = await Promise.all(
+        matches.map(async (match) => {
+          let linkTarget = match[1];
+          // For markdown links, handle anchors or queries if present?
+          // Usually standard md link is [text](path).
+          // Match[1] captures the path.
+
+          // attempt to resolve file
+          const fullPath = await this.resolveFile(linkTarget);
+          let uri: vscode.Uri | undefined;
+
+          const path = fullPath || linkTarget; // if fullpath unresolveable, use grepped text
+
+          // if grepped text not start with /, it's not a path => no uri
+          uri = path.startsWith("/")
+            ? this.uriHandler.getFullURI(path)
+            : undefined;
+          return {
+            path: fullPath || linkTarget,
+            fullURI: uri,
+            notExist: fullPath === undefined,
+          };
+        }),
+      );
+      links.push(...currentLinks);
+    }
+
+    return links;
   }
 
   async readFile(uri: vscode.Uri) {
     try {
       const doc = await vscode.workspace.openTextDocument(uri);
-      return doc.getText();
+      return doc;
     } catch (err) {
       console.log("Error reading file: ", err);
       return null;
@@ -112,36 +175,54 @@ export class ObsiFilesTracker extends vscode.Disposable {
     this.forwardLinks.clear();
     this.backLinks.clear();
     this.fileNameFullPathMap.clear();
-    // let files: [] = [];
 
     if (!vscode.workspace.workspaceFolders)
-      throw new Error("No workspace found ");
+      throw new Error("No workspace found");
 
-    // gather uris
+    // Get configuration
+    const config = vscode.workspace.getConfiguration("obsidianVisualizer");
+    const include = config.get<string[]>("include") || [];
+    const exclude = config.get<string[]>("exclude") || [
+      "**/node_modules/**",
+      "**/.*/**",
+    ];
+
+    // Construct glob patterns
+    const includePattern =
+      include.length > 0 ? `{${include.join(",")}}` : "**/*.md";
+    const excludePattern =
+      exclude.length > 0 ? `{${exclude.join(",")}}` : undefined;
+
+    console.log("Include Pattern:", includePattern);
+    console.log("Exclude Pattern:", excludePattern);
+
+    // active workspace folders
     let uris: vscode.Uri[] = [];
-    for (const folder of vscode.workspace.workspaceFolders) {
-      const folderUri = this.uriHandler.getFullURI(folder.uri.path);
 
-      console.log("Folder's Uri: ", folder.uri.path);
-      console.log("Folder's Uri after transform: ", folderUri);
+    // findFiles works globally across all workspace folders if we don't pass a RelativePattern (base)
+    // But verify if we want to restrict to specific folders or just all.
+    // The original code iterated folders. findFiles can do it all at once if we pass string pattern.
+    // However, if we want to respect the "folderUri" logic from before (which seemed to try to allow multi-root?)
+    // findFiles with string pattern works for multi-root.
 
-      const pattern = new vscode.RelativePattern(folderUri, "**/*.md");
+    // If includePattern is set by user, we use it. If not, we might want to default to **/*.md
+    // Note: User's include might not have .md extension, so we should probably ensure we are looking for markdown.
+    // But if user explicitly says "include docs/*", maybe they have .txt files?
+    // The extension is for obsidian which implies MD.
+    // Let's stick to what the user defined in include, or **/*.md if empty.
+    // And checking extension later? Original code checked .md extension manually in loop.
 
-      // const excludePattern = new vscode.RelativePattern(
-      //   "",
-      //   "**/node_modules/**"
-      // );
+    const currUris = await vscode.workspace.findFiles(
+      includePattern,
+      excludePattern,
+    );
+    uris.push(...currUris);
 
-      // todo: remove node_modules, after VSCode fix this issue
-      const currUris = await vscode.workspace.findFiles(pattern);
-
-      uris.push(...currUris);
-    }
     console.log("URIS found readALlWorkspaceFiles: ", uris);
 
     // first row track files only
     for (let uri of uris) {
-      if (uri.path.split(".").pop() !== "md") continue;
+      if (uri.path.split(".").pop() !== "md") continue; // Enforce MD for now context
       const filename = this.extractFileName(uri.path);
       let existPaths = this.fileNameFullPathMap.get(filename);
       if (existPaths) {
@@ -153,7 +234,6 @@ export class ObsiFilesTracker extends vscode.Disposable {
 
     // second row: scan and parse in to graphs
     for (let uri of uris) {
-      // check markdown
       if (uri.path.split(".").pop() !== "md") continue;
 
       uri = this.uriHandler.getFullURI(uri.path);
@@ -166,18 +246,30 @@ export class ObsiFilesTracker extends vscode.Disposable {
     for (let [file, fwLinks] of this.backLinks) {
       if (fwLinks.some((fw) => fw.path === path)) {
         if (fwLinks.length === 1)
+          this.backLinks.delete(file); // only entry was this path, remove key entirely
+        else
           this.backLinks.set(
             file,
             fwLinks.filter((fw) => fw.path !== path),
-          );
-        else this.backLinks.delete(file);
+          ); // keep the rest
       }
     }
   }
 
   async set(uri: vscode.Uri, fireEvents = true) {
-    const content = await this.readFile(uri);
-    if (content === null) return;
+    const doc = await this.readFile(uri);
+    if (doc === null) return;
+
+    // Check if included
+    if (!this.isIncluded(doc)) {
+      // if it was tracked, delete it
+      if (this.forwardLinks.has(uri.path)) {
+        this.delete(uri);
+      }
+      return;
+    }
+
+    const content = doc.getText();
 
     // track whether this is a new file or an update
     const isNew = !this.forwardLinks.has(uri.path);
@@ -244,6 +336,7 @@ export class ObsiFilesTracker extends vscode.Disposable {
   }
 
   dispose() {
+    this.configListener.dispose();
     this.onDidAddEmitter.dispose();
     this.onDidDeleteEmitter.dispose();
     this.onDidUpdateEmitter.dispose();

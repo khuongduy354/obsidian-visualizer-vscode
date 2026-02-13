@@ -23,7 +23,7 @@ export function setupCommands(
       const graph = appContext.graphBuilder.parseNeoLocal(selectedUri);
 
       // render to webview
-      const webview = new GraphWebView(context);
+      const webview = new GraphWebView(context, appContext);
       webview
         .initializeWebView(graph, "Local Graph")
         // node onDoubleClick listener
@@ -58,7 +58,7 @@ export function setupCommands(
       // const graph = graphBuilder.parseNeoGlobal();
 
       // render to webview
-      const webview = new GraphWebView(context, appContext.graphOption);
+      const webview = new GraphWebView(context, appContext, appContext.graphOption);
       console.log(
         "Global Graph: ",
         appContext.globalGraph.results[0].data[0].graph,

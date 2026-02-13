@@ -64,86 +64,64 @@ filter apply on forwardlinks/backwardslink toggle also
 
 # Design   
 
-+ Flow 
-Read workspace at start  
-Graph parse on that workspace
-Events: File changes -> Workspace read that file -> Graph reparse all  
-Files -> Obsi -> Neo (graph json)
+## Architecture overview
 
-+ Link resolver component 
-- given a filename -> resolve full path, null if not resolveable  
-- if 2 file same name (different path), then pick 1 by default (that's how obsidian handle), apply for both backlinks and forwardlinks
+```mermaid
+graph LR
+    EXT[Extension Activate] --> OFT[ObsiFilesTracker<br/>tracks all .md files]
+    EXT --> WS[WatcherService<br/>monitors file changes]
+    EXT --> AC[AppContext<br/>global state + graph]
+    
+    WS -.file change.-> OFT
+    OFT -.update event.-> WS
+    WS -.rebuild.-> AC
+    AC -.auto-refresh.-> WV[GraphWebView]
+```
 
-+ Obsi Data strucutre - representing obsidian file strucutre (use filename as idx) 
-fap = file absolute path, contains path starting from root workspace   (start with /)
-obsifile = fap + full uri
-- fap -> obsifile
-- fap -> forward links (obsifile[])
-- fap -> backward links (obsifile[])
+## Event flow
 
+```mermaid
+sequenceDiagram
+    FileSystem->>WatcherService: file changed
+    WatcherService->>ObsiFilesTracker: update links
+    ObsiFilesTracker-->>WatcherService: event fired
+    WatcherService->>AppContext: rebuild globalGraph
+    AppContext-->>GraphWebView: onDidGlobalGraphUpdate
+    GraphWebView->>GraphWebView: refresh display
+```
 
-+ Parsing neo 
-<!-- + When to parse / update above data structure  (performance issue) 
-- cache tree to file (if possible on vscode) 
-- parsing whole tree on startup, interval (while parsing, use previous cache tree), 
--> since relying on mostly events is risky -->
+## Data structures
+```
+ObsiFilesTracker:
+  forwardLinks: Map<path, files[]>  // what this file links to
+  backLinks: Map<path, files[]>     // what links to this file
+  fileNameFullPathMap: Map<name, paths[]>  // filename -> full paths (for resolution)
+```
 
-### Events flow
-File change
-    ↓
-WatcherService (debounced, .md filtered, rename detection)
-    ↓
-ObsiFilesTracker.set(uri) — incremental update of forwardLinks/backLinks
-    ↓
-fires onDidUpdate/Add/Delete event
-    ↓
-WatcherService listener calls parseNeoGlobal()
-    ↓
-AppContext.globalGraph updated (cheap O(n) scan)
-### non-exist file  
-- it's not exist in forwardLinks keys, only exist in forwarLinks value   
-- blurred in graph 
-- should i give an id to it ? Yes, no collided with an existed one, because it's not existed 
+## Link resolver
+- given a filename -> resolve full path via fileNameFullPathMap, undefined if not resolveable
+- if 2 files same name (different path), pick first (that's how obsidian handles)
+- applies for both backlinks and forwardlinks
 
+## Non-exist (virtual) file
+- not in forwardLinks keys, only in forwardLinks values
+- blurred in graph, given an id = its path (no collision since file doesn't exist as a key)
 
-+ cross-Platform 
-to read files, different plats have different uris, so added a URihandler class to detect workspace uri, any later uri is based on that. 
-graph class only works on filepath, independent of uri 
- 
+## Disposal chain
+```
+extension deactivate
+  -> context.subscriptions dispose all:
+     -> WatcherService.dispose (timers + fsWatcher + event subs)
+     -> ObsiFilesTracker.dispose (configListener + event emitters)
+     -> AppContext.dispose (onDidGlobalGraphUpdate emitter)
+  -> GraphWebView panel.onDidDispose (global graph event subscription)
+```
 
-+ FORMATS  
-**web**
-folder.uri.path = "/"  # read from root
-folderUri = uriHandler.getFullURI(folder.uri.path)
-result: {
-    "$mid": 1,
-    "fsPath": "/",
-    "external": "vscode-test-web://mount/",
-    "path": "/",
-    "scheme": "vscode-test-web",
-    "authority": "mount"
-}  
+## Cross-Platform
+URIHandler detects workspace scheme (vscode-test-web, file, vscode-vfs, http) and constructs proper URIs.
+GraphCreator only works on file paths, independent of URI scheme.
 
-baseWorkspaceURI = 
-{
-    "$mid": 1,
-    "fsPath": "/",
-    "external": "vscode-test-web://mount/",
-    "path": "/",
-    "scheme": "vscode-test-web",
-    "authority": "mount"
-} 
-
---> Web every file object is just relative path, so an append to base path is needed (relative = true in uriHandler)
-
-**desktop**
-folder.uri.path = "/some/absolute/path"  # read from root, desktop has extra components compared to web 
-
-{$mid: 1, path: '/home/khuongduy354/assets/obsidian-git-notes/home/khuongduy354/assets/obsidian-git-notes', scheme: 'file'}
-
-
-baseWorkspaceURI 
-{$mid: 1, fsPath: '/home/khuongduy354/assets/obsidian-git-notes', external: 'file:///home/khuongduy354/assets/obsidian-git-notes', path: '/home/khuongduy354/assets/obsidian-git-notes', scheme: 'file'}
-
---> Desktop every file object includes absolute path, so relative must be disable in uriHandler or else that base absolute path will be duplicated 
+### URI formats
+- web: path is relative, append to base (vscode-test-web://mount/)
+- desktop: path is absolute (/home/.../vault), no appending needed
 

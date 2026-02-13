@@ -24,11 +24,12 @@ export class WatcherService extends vscode.Disposable {
   ) {
     super(() => this.disposeAll());
 
+    // File change watcher (still need FileSystemWatcher for content changes)
+    const fsWatcher = vscode.workspace.createFileSystemWatcher("**/*.md");
+
     this.disposables.push(
-      // File change watcher (still need FileSystemWatcher for content changes)
-      vscode.workspace
-        .createFileSystemWatcher("**/*.md")
-        .onDidChange((uri) => this.onFileChanged(uri)),
+      fsWatcher, // dispose the watcher itself, not just the event subscription
+      fsWatcher.onDidChange((uri) => this.onFileChanged(uri)),
 
       // VS Code workspace events (cleaner, have dedicated rename)
       vscode.workspace.onDidCreateFiles((e) => {
@@ -51,21 +52,24 @@ export class WatcherService extends vscode.Disposable {
 
       // Listen to tracker events to rebuild graph from updated tracker state
       this.obsiFilesTracker.onDidUpdateEmitter.event(() => {
-        this.appContext.globalGraph = this.graphCreator.parseNeoGlobal(
-          this.appContext.graphOption,
-        );
+        this.triggerGraphUpdate();
       }),
       this.obsiFilesTracker.onDidAddEmitter.event(() => {
-        this.appContext.globalGraph = this.graphCreator.parseNeoGlobal(
-          this.appContext.graphOption,
-        );
+        this.triggerGraphUpdate();
       }),
       this.obsiFilesTracker.onDidDeleteEmitter.event(() => {
-        this.appContext.globalGraph = this.graphCreator.parseNeoGlobal(
-          this.appContext.graphOption,
-        );
+        this.triggerGraphUpdate();
       }),
     );
+  }
+
+  private triggerGraphUpdate() {
+    this.debounce("global-graph-update", () => {
+      this.appContext.globalGraph = this.graphCreator.parseNeoGlobal(
+        this.appContext.graphOption,
+      );
+      this.appContext.onDidGlobalGraphUpdate.fire();
+    });
   }
 
   private isMd(uri: vscode.Uri): boolean {

@@ -270,8 +270,9 @@ case "onSearchChange":
 - Neo4j-compatible format enables rich visualizations
 
 **Key Areas for Improvement:**
-1. Incremental graph updates instead of full rebuilds
-2. Debouncing for rapid file changes
-3. User configuration options
-4. Memory management for event subscriptions
-5. Client-side search filtering
+1. Incremental graph updates instead of full rebuilds [x]
+2. Debouncing for rapid file changes [x]
+3. User configuration options [x]
+<!-- 4. Memory management for event subscriptions [x]  -->
+5. Client-side search filtering [x]
+6. Fast references [x]

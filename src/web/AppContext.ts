@@ -29,7 +29,13 @@ export class AppContext {
     this.obsiFilesTracker = obsiFilesTracker;
   }
 
+  onDidGlobalGraphUpdate = new vscode.EventEmitter<void>();
+
   setGraphOption(option: GraphOption) {
     this.graphOption = option;
+  }
+
+  dispose() {
+    this.onDidGlobalGraphUpdate.dispose();
   }
 }
