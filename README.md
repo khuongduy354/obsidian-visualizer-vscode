@@ -3,9 +3,12 @@
 Providing core obsidian features in VSCode: graphs, backlinks,...
 
 VSCode marketplace: [Obsidian Visualizer](https://marketplace.visualstudio.com/items?itemName=khuongduy354.obsidian-visualizer)
-![global graph demo](images/demo_dark.png)
+<!-- ![global graph demo](images/demo_dark.png)
 
-![1.1.2.png](images/1.1.2.png)
+![1.1.2.png](images/1.1.2.png) -->
+
+![newgraph.png](images/new-graph.gif)
+
 
 # Usage  
 Install the extension, it will read workspace on startup. After intial read, you can view global graph, local graph  
@@ -43,12 +46,12 @@ If graphs doesn't rendered as intended: Command Pallete > Force workspace parse
 The graph view includes interactive controls in the UI panel to adjust:
 
 **Visual Settings:**
-- Node Size (5-50): Adjust node radius
-- Font Size (6-24): Label text size
+- Node Size (2-50): Base node radius. Nodes scale with connection count
+- Font Size (6-30): Base label text size. Labels show/hide based on zoom level
 
 **Force Simulation:**
-- Repulsion (100-3000): How much nodes push apart
-- Link Distance (30-500): Ideal distance between connected nodes
+- Repulsion (100-5000): How much nodes push apart
+- Link Distance (30-800): Ideal distance between connected nodes
 - Link Strength (0.001-0.1): How strongly links pull nodes together
 - Center Force (0-0.1): Gravity toward center
 - Collision Radius (10-100): Prevents node overlap
@@ -77,6 +80,13 @@ Press F5 or  Command Pallete >Debug: Start Debugging
 
 
 ## Release Notes 
+
+### 1.1.5
+
+- Obsidian-like clean visual style (muted links, soft nodes)
+- Zoom-based label visibility (less clutter)
+- Connection-based node scaling (more links = bigger node)
+- More generous default spacing for dense vaults
 
 ### 1.1.4
 
