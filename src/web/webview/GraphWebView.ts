@@ -9,17 +9,23 @@ export class GraphWebView {
   panel: vscode.WebviewPanel | undefined;
   graphOption: GraphOption;
   graphData: string = "";
-  states = {
+  states: {
+    searchInput: string;
+    searchCursorPos: number;
+    restoreFocusToSearch: boolean;
+    graphSettings: Record<string, number>;
+  } = {
     searchInput: "",
     searchCursorPos: 0,
+    restoreFocusToSearch: false,
     graphSettings: {
-      nodeSize: 20,
-      fontSize: 11,
-      repulsionForce: 800,
-      linkDistance: 120,
-      linkStrength: 0.005,
-      centerForce: 0.01,
-      collisionRadius: 35,
+      nodeSize: 16,
+      fontSize: 10,
+      repulsionForce: 1500,
+      linkDistance: 200,
+      linkStrength: 0.003,
+      centerForce: 0.015,
+      collisionRadius: 30,
       velocityDecay: 0.4,
     },
   };
@@ -74,6 +80,7 @@ export class GraphWebView {
 
     const libs = this.loadLibs(this.panel as vscode.WebviewPanel);
     this.panel.webview.html = this.getGraphWebViewHtml(libs, this.graphData);
+    this.states.restoreFocusToSearch = false;
   }
   initializeWebView(_graphData: any, panelName: string) {
     const panel = vscode.window.createWebviewPanel(
@@ -136,17 +143,17 @@ export class GraphWebView {
           case "onSearchChange":
             this.states.searchInput = message.searchFilter;
             this.states.searchCursorPos = message.cursorPos;
+            this.states.restoreFocusToSearch = true;
             if (onSearchChanged) onSearchChanged(message.searchFilter);
             this.refresh();
             break;
-          case "onGraphSettingChanged":
-            // Update the setting in state
+          case "onGraphSettingChanged": {
+            // Just save state, live update already applied in webview
             const settingKey =
               message.setting as keyof typeof this.states.graphSettings;
             this.states.graphSettings[settingKey] = message.value;
-            // Refresh to apply the new settings
-            this.refresh();
             break;
+          }
           default:
             console.error("Unknown command: ", message.command);
             break;
@@ -245,9 +252,7 @@ export class GraphWebView {
             <div class="control-group">
                 <h3>Search</h3>
                 <div class="search-container">
-                    <input autofocus value="${
-                      this.states.searchInput
-                    }" type="text" id="search" class="search-input" placeholder="Search files...">
+                    <input value="${this.states.searchInput}" type="text" id="search" class="search-input" placeholder="Search files...">
                 </div>
             </div>
         </div>
@@ -280,6 +285,14 @@ export class GraphWebView {
       slider.addEventListener('input', function() {
         const value = parseFloat(this.value);
         valueSpan.textContent = value;
+        
+        // Update renderer live if it exists
+        if (window.globalRenderer && window.globalRenderer.updateSettings) {
+          const settings = {};
+          settings[id] = value;
+          window.globalRenderer.updateSettings(settings);
+        }
+        
         vscode.postMessage({
           command: "onGraphSettingChanged",
           setting: id,
@@ -299,17 +312,21 @@ export class GraphWebView {
       });
     });
 
-  // autofocus
-       window.onload = function() {
-      setTimeout(function() {
-          let that = document.getElementById("search")
-          that.focus();
-          // at end
-          setTimeout(function(){ that.selectionStart = that.selectionEnd = ${
-            this.states.searchCursorPos
-          }; }, 0);
-      }, 0);
-   };
+    // Restore focus to search if we just came from a search refresh
+    ${
+      this.states.restoreFocusToSearch
+        ? `
+    (function() {
+      var el = document.getElementById('search');
+      if (el) {
+        el.focus();
+        var pos = ${this.states.searchCursorPos};
+        setTimeout(function(){ el.selectionStart = el.selectionEnd = pos; }, 0);
+      }
+    })();
+    `
+        : ""
+    }
     </script>
     `;
   }
@@ -710,7 +727,7 @@ export class GraphWebView {
       
       function initGraph() {
         try {
-          var renderer = new GraphRenderer('.graph', {
+          window.globalRenderer = new GraphRenderer('.graph', {
             ...graphConfig,
             onNodeDoubleClick: function(properties) {
               vscode.postMessage({
@@ -719,7 +736,7 @@ export class GraphWebView {
               });
             }
           });
-          renderer.render(graphData);
+          window.globalRenderer.render(graphData);
           console.log('Graph rendered successfully');
         } catch (err) {
           console.error('Graph init error:', err);

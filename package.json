@@ -71,49 +71,49 @@
         },
         "obsidianVisualizer.graph.nodeSize": {
           "type": "number",
-          "default": 20,
+          "default": 16,
           "minimum": 5,
           "maximum": 50,
           "description": "Size of nodes in the graph (radius in pixels)"
         },
         "obsidianVisualizer.graph.fontSize": {
           "type": "number",
-          "default": 11,
+          "default": 10,
           "minimum": 6,
           "maximum": 24,
           "description": "Font size for node labels"
         },
         "obsidianVisualizer.graph.repulsionForce": {
           "type": "number",
-          "default": 800,
+          "default": 1500,
           "minimum": 100,
           "maximum": 3000,
           "description": "Repulsion force between nodes (higher = more spread out)"
         },
         "obsidianVisualizer.graph.linkDistance": {
           "type": "number",
-          "default": 120,
+          "default": 200,
           "minimum": 30,
           "maximum": 500,
           "description": "Ideal distance between connected nodes"
         },
         "obsidianVisualizer.graph.linkStrength": {
           "type": "number",
-          "default": 0.005,
+          "default": 0.003,
           "minimum": 0.001,
           "maximum": 0.1,
           "description": "Strength of link attraction force"
         },
         "obsidianVisualizer.graph.centerForce": {
           "type": "number",
-          "default": 0.01,
+          "default": 0.015,
           "minimum": 0,
           "maximum": 0.1,
           "description": "Force pulling nodes toward center (prevents drift)"
         },
         "obsidianVisualizer.graph.collisionRadius": {
           "type": "number",
-          "default": 35,
+          "default": 30,
           "minimum": 10,
           "maximum": 100,
           "description": "Collision detection radius to prevent node overlap"

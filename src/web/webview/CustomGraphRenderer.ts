@@ -109,6 +109,20 @@ class GraphRenderer {
             }
         }
 
+        // Compute degree (connection count) per node
+        for (var i = 0; i < this.nodes.length; i++) {
+            this.nodes[i].degree = 0;
+        }
+        for (var i = 0; i < this.links.length; i++) {
+            this.links[i].source.degree++;
+            this.links[i].target.degree++;
+        }
+        // Compute scale factor per node: sqrt(1 + degree) so highly connected nodes are bigger
+        for (var i = 0; i < this.nodes.length; i++) {
+            var deg = this.nodes[i].degree;
+            this.nodes[i].scale = Math.sqrt(1 + deg * 0.5);
+        }
+
         // Random initial positions
         var w = this.containerEl.clientWidth || 800;
         var h = this.containerEl.clientHeight || 600;
@@ -145,7 +159,8 @@ class GraphRenderer {
             ['bidirectional', '#9c27b0']
         ];
         var self = this;
-        var arrowRefX = (self.nodeSize + 8).toString();
+        // Use base nodeSize for arrow offset (average case)
+        var arrowRefX = (self.nodeSize + 10).toString();
         for (var m = 0; m < markerCfg.length; m++) {
             var name = markerCfg[m][0];
             var color = markerCfg[m][1];
@@ -170,7 +185,7 @@ class GraphRenderer {
         svg.appendChild(this.gMain);
 
         // Layer groups
-        var gLinks = this._svgEl('g');
+        var gLinks = this._svgEl('g', { style: 'isolation: isolate;' });
         var gNodes = this._svgEl('g');
         var gLabels = this._svgEl('g');
         this.gMain.appendChild(gLinks);
@@ -184,7 +199,8 @@ class GraphRenderer {
             var link = this.links[i];
             var line = this._svgEl('line', {
                 stroke: linkColors[link.category] || '#a5abb6',
-                'stroke-width': '2',
+                'stroke-width': '1.5',
+                'opacity': '0.3',
                 'marker-end': 'url(#arrow-' + (link.category || 'forward') + ')',
                 'class': 'graph-link'
             });
@@ -193,12 +209,13 @@ class GraphRenderer {
             this.linkEls.push(line);
         }
 
-        // Create node circles
+        // Create node circles (scaled by degree)
         this.nodeEls = [];
         for (var i = 0; i < this.nodes.length; i++) {
             var nd = this.nodes[i];
+            var r = Math.round(this.nodeSize * nd.scale);
             var circle = this._svgEl('circle', {
-                r: this.nodeSize.toString(),
+                r: r.toString(),
                 fill: nd.isVirtual ? '#666' : '#cccccc',
                 stroke: '#454545',
                 'stroke-width': '2',
@@ -211,16 +228,17 @@ class GraphRenderer {
             this.nodeEls.push(circle);
         }
 
-        // Create labels
+        // Create labels (scaled by degree)
         this.labelEls = [];
         for (var i = 0; i < this.nodes.length; i++) {
             var nd = this.nodes[i];
+            var r = Math.round(this.nodeSize * nd.scale);
             var text = this._svgEl('text', {
                 'text-anchor': 'middle',
-                'font-size': this.fontSize + 'px',
+                'font-size': Math.round(this.fontSize * nd.scale) + 'px',
                 fill: '#cccccc',
                 'pointer-events': 'none',
-                dy: (this.nodeSize + 13).toString(),
+                dy: (r + 13).toString(),
                 'class': 'graph-label'
             });
             text.textContent = nd.label;
@@ -306,11 +324,14 @@ class GraphRenderer {
                     node.fy = node.y;
                 });
                 el.addEventListener('mouseenter', function() {
-                    el.setAttribute('r', (self.nodeSize * 1.25).toString());
-                    self._highlight(el._data);
+                    var nd = el._data;
+                    var r = Math.round(self.nodeSize * nd.scale);
+                    el.setAttribute('r', Math.round(r * 1.25).toString());
+                    self._highlight(nd);
                 });
                 el.addEventListener('mouseleave', function() {
-                    el.setAttribute('r', self.nodeSize.toString());
+                    var nd = el._data;
+                    el.setAttribute('r', Math.round(self.nodeSize * nd.scale).toString());
                     self._clearHighlight();
                 });
                 el.addEventListener('dblclick', function(e) {
@@ -333,8 +354,8 @@ class GraphRenderer {
             var lEl = this.linkEls[i];
             var d = lEl._data;
             var isConn = d.source.id === node.id || d.target.id === node.id;
-            lEl.setAttribute('opacity', isConn ? '1' : '0.15');
-            lEl.setAttribute('stroke-width', isConn ? '3' : '2');
+            lEl.setAttribute('opacity', isConn ? '1' : '0.1');
+            lEl.setAttribute('stroke-width', isConn ? '2.5' : '1.5');
             if (isConn) {
                 connected[d.source.id] = true;
                 connected[d.target.id] = true;
@@ -358,8 +379,8 @@ class GraphRenderer {
 
     _clearHighlight() {
         for (var i = 0; i < this.linkEls.length; i++) {
-            this.linkEls[i].setAttribute('opacity', '1');
-            this.linkEls[i].setAttribute('stroke-width', '2');
+            this.linkEls[i].setAttribute('opacity', '0.3');
+            this.linkEls[i].setAttribute('stroke-width', '1.5');
         }
         for (var i = 0; i < this.nodeEls.length; i++) {
             var d = this.nodeEls[i]._data;
@@ -408,7 +429,7 @@ class GraphRenderer {
         var alpha = this.alpha;
         var i, j, a, b, dx, dy, dist, force, fx, fy, push, nx, ny;
 
-        // Repulsion (all pairs) + collision
+        // Repulsion (all pairs) + collision (scaled by degree)
         for (i = 0; i < nodes.length; i++) {
             for (j = i + 1; j < nodes.length; j++) {
                 a = nodes[i];
@@ -417,17 +438,21 @@ class GraphRenderer {
                 dy = b.y - a.y;
                 dist = Math.sqrt(dx * dx + dy * dy) || 1;
 
-                // Collision
-                if (dist < this.collisionRadius * 2) {
-                    push = (this.collisionRadius * 2 - dist) * 0.5 * alpha;
+                // Collision (use each node's scaled radius)
+                var colA = this.collisionRadius * a.scale;
+                var colB = this.collisionRadius * b.scale;
+                var colDist = colA + colB;
+                if (dist < colDist) {
+                    push = (colDist - dist) * 0.5 * alpha;
                     nx = dx / dist;
                     ny = dy / dist;
                     if (a.fx === null) { a.vx -= nx * push; a.vy -= ny * push; }
                     if (b.fx === null) { b.vx += nx * push; b.vy += ny * push; }
                 }
 
-                // Coulomb repulsion
-                force = this.repulsion * alpha / (dist * dist);
+                // Coulomb repulsion (stronger for high-degree nodes)
+                var repScale = a.scale * b.scale;
+                force = this.repulsion * repScale * alpha / (dist * dist);
                 fx = (dx / dist) * force;
                 fy = (dy / dist) * force;
                 if (a.fx === null) { a.vx -= fx; a.vy -= fy; }
@@ -499,6 +524,41 @@ class GraphRenderer {
             d = el._data;
             el.setAttribute('x', d.x);
             el.setAttribute('y', d.y);
+        }
+    }
+
+    updateSettings(newOptions) {
+        var k;
+        // Update visual params
+        if (newOptions.nodeSize !== undefined) this.nodeSize = newOptions.nodeSize;
+        if (newOptions.fontSize !== undefined) this.fontSize = newOptions.fontSize;
+        
+        // Update force params
+        if (newOptions.repulsionForce !== undefined) this.repulsion = newOptions.repulsionForce;
+        if (newOptions.linkStrength !== undefined) this.attractionStrength = newOptions.linkStrength;
+        if (newOptions.linkDistance !== undefined) this.linkDistance = newOptions.linkDistance;
+        if (newOptions.centerForce !== undefined) this.centerStrength = newOptions.centerForce;
+        if (newOptions.collisionRadius !== undefined) this.collisionRadius = newOptions.collisionRadius;
+        if (newOptions.velocityDecay !== undefined) this.velocityDecay = newOptions.velocityDecay;
+
+        // Update visual elements (scaled by degree)
+        for (var i = 0; i < this.nodeEls.length; i++) {
+            var nd = this.nodeEls[i]._data;
+            var r = Math.round(this.nodeSize * nd.scale);
+            this.nodeEls[i].setAttribute('r', r.toString());
+        }
+        for (var i = 0; i < this.labelEls.length; i++) {
+            var nd = this.labelEls[i]._data;
+            var r = Math.round(this.nodeSize * nd.scale);
+            this.labelEls[i].setAttribute('font-size', Math.round(this.fontSize * nd.scale) + 'px');
+            this.labelEls[i].setAttribute('dy', (r + 13).toString());
+        }
+
+        // Restart simulation gently
+        if (this.alpha < 0.1) this.alpha = 0.1;
+        if (!this.running) {
+            this.running = true;
+            this._tick();
         }
     }
 }
